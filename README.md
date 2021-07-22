@@ -159,11 +159,11 @@ Lv.2 Intensive Coursework
 
 ### 폴리시의 이동과 컨텍스트 매핑(점선은 Pub/Sub, 실선은 Req/Resp)을 통해 완성된 모형
 
-<img src="https://user-images.githubusercontent.com/85722733/126592292-cdf1718e-ac9a-4a02-8c62-d43702e74f56.png"  width="100%" height="100%">
+<img src="https://user-images.githubusercontent.com/85722733/126592292-cdf1718e-ac9a-4a02-8c62-d43702e74f56.png"  width="90%" height="90%">
 
 ### 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
 
-<img src="https://user-images.githubusercontent.com/85722733/126592326-3e84a1e3-b100-428d-a9b1-861df5b411e1.png"  width="100%" height="100%">
+<img src="https://user-images.githubusercontent.com/85722733/126592326-3e84a1e3-b100-428d-a9b1-861df5b411e1.png"  width="90%" height="90%">
 
     - 고객이 도서를 선택하여 주문한다 (ok)
     - 고객이 결제한다 (ok)
@@ -172,7 +172,7 @@ Lv.2 Intensive Coursework
     - 상점주인은 주문 접수 시 고객에게 도서쿠폰을 발행할 수 있다 (ok)
     - 도서 포장이 완료되면 상점소속배달기사가 배송을 시작한다 (ok)
 
-<img src="https://user-images.githubusercontent.com/85722733/126592351-98d1147e-fc4e-4fa8-bf74-9809802bc4d6.png"  width="100%" height="100%">
+<img src="https://user-images.githubusercontent.com/85722733/126592351-98d1147e-fc4e-4fa8-bf74-9809802bc4d6.png"  width="90%" height="90%">
  
     - 고객이 주문을 취소할 수 있다 (ok)
     - 주문이 취소되면 배송 및 결제가 취소된다 (ok)
@@ -183,7 +183,7 @@ Lv.2 Intensive Coursework
 
 
 ### 비기능 요구사항에 대한 검증
-<img src="https://user-images.githubusercontent.com/85722733/126592370-332e796c-d115-453d-82a1-4ff8a9c414c1.png"  width="100%" height="100%">
+<img src="https://user-images.githubusercontent.com/85722733/126592370-332e796c-d115-453d-82a1-4ff8a9c414c1.png"  width="90%" height="90%">
 
     - 마이크로서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
         - 고객 주문시 결제처리:  결제가 완료되지 않은 주문은 절대 받지 않는다는 경영자의 오랜 신념(?)에 따라, ACID 트랜잭션 적용. 주문완료시 결제처리에 대해서는 Request-Response 방식 처리
