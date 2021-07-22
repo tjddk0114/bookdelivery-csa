@@ -520,6 +520,7 @@ transfer-encoding: chunked
 }
 ```
 ![주문접수-서킷브레이커](https://user-images.githubusercontent.com/85722733/126617386-3513649c-12ec-4d3b-a368-e3f515f32822.png)
+
 위와 같이 ordermanagement 서비스에서 fallack 옵션이 동작하여 "Circuit breaker has been opened. Fallback returned instead." 로그가 보여진다
 
 
@@ -576,8 +577,9 @@ public class PolicyHandler{
 
 bookdelivery topic의 partition은 1개이기 때문에 새로 구동시킨 8095 포트의 서비스만 partition이 할당된다.
 
-![쿠폰-8085포트](https://user-images.githubusercontent.com/85722733/126617716-99bc8a2a-04ec-4a7c-94c7-0fc6bb921e20.png)
-![쿠폰-8095포트](https://user-images.githubusercontent.com/85722733/126617765-38180863-9f41-413b-a94a-41d49cf17784.png)
+![쿠폰-8085포트](https://user-images.githubusercontent.com/85722733/126621466-2ab00ca0-9836-4ca6-8333-6bd93ded32ec.png)
+
+![쿠폰-8095포트](https://user-images.githubusercontent.com/85722733/126621479-7e64110f-21c6-4b15-ad61-c887735c6468.png)
 
 
 결제(payment)에서 결제취소 이벤트가 발생하면 8095포트에 있는 coupon 서비스에게만 이벤트 메세지가 수신되게 되고
@@ -605,28 +607,31 @@ order 서비스의 주문 생성이 완료되면 payment 서비스를 트리거�
 
 실행한 결과는 아래와 같다
 
-![1_order생성](https://user-images.githubusercontent.com/85722733/125205577-e2ff2380-e2bd-11eb-821f-a80e801d3352.jpg)
+주문 생성 시 sync 호출로 인해 결제가 발생하여 결제 승인이 나게 되며, 
 
-![2_payment생성되어있음](https://user-images.githubusercontent.com/85722733/125205593-fca06b00-e2bd-11eb-821f-be4f864ab807.jpg)
+![주문생성api](https://user-images.githubusercontent.com/85722733/126621651-bc1b256b-e5b1-4488-8f45-d912ec4f8859.png)
 
-주문 생성 시 결국 결제가 발생하여 결제 승인이 나게 되며, 
+![주문생성-결제생성](https://user-images.githubusercontent.com/85722733/126621687-fbef2a91-8fea-4776-95dd-ed986814df28.png)
 
-![2_카프카orderplaced](https://user-images.githubusercontent.com/85722733/125205607-0c1fb400-e2be-11eb-831c-5d833a2be269.jpg)
+![주문생성-카프카](https://user-images.githubusercontent.com/85722733/126621707-37066a60-2b99-40de-b666-23671a417b53.png)
 
 이를 ordermanagement 서비스에서 연계받아 주문내역을 수신받게 된다
 
-![5_주문내역전달](https://user-images.githubusercontent.com/85722733/125205624-20fc4780-e2be-11eb-81dd-5d7dd97f7be8.jpg)
+![주문생성-mgmt주문내역전달](https://user-images.githubusercontent.com/85722733/126621715-84c89d90-666b-4ec2-bb53-d51912393f56.png)
 
-점주가 주문을 접수하여 주문접수 건이 생성되면 coupon 서비스를 트리거하여 couponStatus가 "sending"인 경우에 쿠폰 발행이 되고
+점주가 주문을 접수하여 주문접수 건이 생성되고, 이후 점주가 쿠폰 발행을 위해 couponStatus를 "sending"으로 coupon 서비스를 트리거하면 쿠폰 발행이 되고
 
-![6_주문접수생성](https://user-images.githubusercontent.com/85722733/125205658-49844180-e2be-11eb-953b-4732d80bcea4.jpg)
+![주문접수생성api](https://user-images.githubusercontent.com/85722733/126621800-6b91c94d-717d-46ff-ac7b-b7b8d6149e2a.png)
+
+![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126621945-171b2a77-ba09-44fb-9fa5-20240f908874.png)
 
 delivery 서비스에서 배송시작 이벤트가 트리거 된다
 
-![6_5_startdelivery](https://user-images.githubusercontent.com/85722733/125205664-52751300-e2be-11eb-9c72-3680aee4a68a.jpg)
+![주문접수생성-startDelivery](https://user-images.githubusercontent.com/85722733/126621868-bf7786b0-4cae-4b65-8990-b23642434fe6.png)
 
-![7_카프카주문접수배달시작](https://user-images.githubusercontent.com/85722733/125205667-59038a80-e2be-11eb-9d30-a1d453635722.jpg)
+![주문접수생성-배송생성](https://user-images.githubusercontent.com/85722733/126621934-648abea3-bf9c-4679-84b9-17e52b0e9220.png)
 
+![주문접수생성-카프카](https://user-images.githubusercontent.com/85722733/126621960-a1673a48-b307-4f6c-9877-078d35c6010c.png)
 
 
 #### SAGA 패턴에 맞춘 Roll-Back 
@@ -638,23 +643,29 @@ order 서비스에서 주문취소가 발생하면 발행된 이벤트가 orderm
 
 고객의 주문취소로 인하여 주문 상태를 주문취소로 업데이트 시 
 
-![8_주문취소](https://user-images.githubusercontent.com/85722733/125205690-7cc6d080-e2be-11eb-972f-3877814c55e6.jpg)
+![주문취소api](https://user-images.githubusercontent.com/85722733/126622578-5ca4265f-aaed-4c6a-9681-c7318216a59e.png)
+
+
+
+![주문취소-카프카](https://user-images.githubusercontent.com/85722733/126622677-4c8f9cbe-0b8b-41c8-bc88-4e99e937c1ff.png)
 
 OrderCanceled 이벤트로 인하여 orderManagement 서비스에서 주문상태가 주문접수취소로 업데이트되어 이벤트가 발생되고
 
-![8_5_주문접수취소호출](https://user-images.githubusercontent.com/85722733/125205700-8f410a00-e2be-11eb-8e9e-65560408ad0f.jpg)
+![주문취소-주문접수취소](https://user-images.githubusercontent.com/85722733/126622609-0c9a40b6-7817-414d-85aa-3e84d3cffdbc.png)
 
-이로 인해 트리거되어 payment 및 delivery 서비스에서도 취소 이벤트가 발생하게 되는데
+이로 인해 트리거되어 delivery 및 payment 서비스에서도 취소 이벤트가 발생하게 되는데
 
-![8_5_결제취소호출](https://user-images.githubusercontent.com/85722733/125205708-9b2ccc00-e2be-11eb-9f26-788b5e07a017.jpg)
+![주문취소-배송취소](https://user-images.githubusercontent.com/85722733/126622624-beaa08a8-811a-4856-b6a1-fb0e9dfc0a52.png)
 
-![8_5_배송취소호출](https://user-images.githubusercontent.com/85722733/125205702-95cf8180-e2be-11eb-95ba-50910f689f65.jpg)
+![주문취소-결제취소](https://user-images.githubusercontent.com/85722733/126622641-74b0fac7-042b-4383-88ed-b1e5f0b24110.png)
 
 payment 서비스에서 결제취소 이벤트 발행 시 coupon 서비스에서 subscribe하여 해당 주문 건에 대해 고객에게 발행된 쿠폰에 대한 쿠폰상태를 invalid로 변경하면서 쿠폰을 무효화하게 된다 
 
-추가필요
+![주문취소-쿠폰취소폴리시호출](https://user-images.githubusercontent.com/85722733/126622650-83a0b5d2-1112-49d0-b0bb-bcd114bd0312.png)
 
 ![9_카프카취소이벤트](https://user-images.githubusercontent.com/85722733/125205715-a1bb4380-e2be-11eb-840a-f6680d818979.jpg)
+
+![주문취소-쿠폰취소](https://user-images.githubusercontent.com/85722733/126622900-13b20ace-bf79-4a56-a63d-55f9d6222b7b.png)
 
 
 ### CQRS
