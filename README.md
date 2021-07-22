@@ -619,13 +619,13 @@ order 서비스의 주문 생성이 완료되면 payment 서비스를 트리거�
 
 ![주문생성-mgmt주문내역전달](https://user-images.githubusercontent.com/85722733/126621715-84c89d90-666b-4ec2-bb53-d51912393f56.png)
 
-점주가 주문을 접수하여 주문접수 건이 생성되고, 이후 점주가 쿠폰 발행을 위해 couponStatus를 "sending"으로 coupon 서비스를 트리거하면 쿠폰 발행이 되고
+점주가 주문을 접수하여 주문접수 건이 생성되고, 이후 점주가 쿠폰 발행을 위해 couponStatus를 "sending"으로 coupon 서비스를 트리거하면 쿠폰 발행이 되며
 
 ![주문접수생성api](https://user-images.githubusercontent.com/85722733/126621800-6b91c94d-717d-46ff-ac7b-b7b8d6149e2a.png)
 
 ![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126621945-171b2a77-ba09-44fb-9fa5-20240f908874.png)
 
-delivery 서비스에서 배송시작 이벤트가 트리거 된다
+이와 동시에 delivery 서비스에서 배송시작 이벤트가 트리거 된다
 
 ![주문접수생성-startDelivery](https://user-images.githubusercontent.com/85722733/126621868-bf7786b0-4cae-4b65-8990-b23642434fe6.png)
 
@@ -645,10 +645,6 @@ order 서비스에서 주문취소가 발생하면 발행된 이벤트가 orderm
 
 ![주문취소api](https://user-images.githubusercontent.com/85722733/126622578-5ca4265f-aaed-4c6a-9681-c7318216a59e.png)
 
-
-
-![주문취소-카프카](https://user-images.githubusercontent.com/85722733/126622677-4c8f9cbe-0b8b-41c8-bc88-4e99e937c1ff.png)
-
 OrderCanceled 이벤트로 인하여 orderManagement 서비스에서 주문상태가 주문접수취소로 업데이트되어 이벤트가 발생되고
 
 ![주문취소-주문접수취소](https://user-images.githubusercontent.com/85722733/126622609-0c9a40b6-7817-414d-85aa-3e84d3cffdbc.png)
@@ -663,9 +659,9 @@ payment 서비스에서 결제취소 이벤트 발행 시 coupon 서비스에서
 
 ![주문취소-쿠폰취소폴리시호출](https://user-images.githubusercontent.com/85722733/126622650-83a0b5d2-1112-49d0-b0bb-bcd114bd0312.png)
 
-![9_카프카취소이벤트](https://user-images.githubusercontent.com/85722733/125205715-a1bb4380-e2be-11eb-840a-f6680d818979.jpg)
+![주문취소-쿠폰취소](https://user-images.githubusercontent.com/85722733/126624283-715664a9-16af-42bb-b5ad-71a9ef1f2a08.png)
 
-![주문취소-쿠폰취소](https://user-images.githubusercontent.com/85722733/126622900-13b20ace-bf79-4a56-a63d-55f9d6222b7b.png)
+![주문취소-카프카](https://user-images.githubusercontent.com/85722733/126622677-4c8f9cbe-0b8b-41c8-bc88-4e99e937c1ff.png)
 
 
 ### CQRS
@@ -929,7 +925,7 @@ spring:
 
 Gateway 포트인 8088을 통해서 발행된 쿠폰이 정상 조회되는 것을 확인함
 
-![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126618066-771d9860-b750-443a-8c07-ade0d1634a5e.png)
+![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126625049-22fbc909-2bc7-421c-95a8-7e0bccc8a229.png)
 
 
 - 게이트웨이와 인증서버(OAuth), JWT 토큰 인증을 통하여 마이크로서비스들을 보호할 수 있는가?
