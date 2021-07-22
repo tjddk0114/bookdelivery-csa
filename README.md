@@ -231,48 +231,61 @@ mvn spring-boot:run
 
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 데이터 접근 어댑터를 개발하였는가? 
 
-각 서비스 내에 도출된 핵심 Aggregate Root 객체를 Entity로 선언하였다. (주문(order), 결제(payment), 주문관리(ordermgmt), 배송(delivery))
+각 서비스 내에 도출된 핵심 Aggregate Root 객체를 Entity로 선언하였다. (주문(order), 결제(payment), 주문관리(ordermgmt), 배송(delivery), 쿠폰(coupon))
 
-주문관리 Entity (Ordermgmt.java)
+쿠폰 Entity (Coupon.java)
 ```
 @Entity
-@Table(name="Ordermgmt_table")
-public class Ordermgmt {
+@Table(name="Coupon_table")
+public class Coupon {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long orderMgmtId;
+    private Long couponCode;
+    private Long customerId;
     private Long orderId;
-    private Long itemId;
-    private String itemName;
-    private Integer qty;
-    private String customerName;
-    private String deliveryAddress;
-    private String deliveryPhoneNumber;
-    private String orderStatus;
+    private String couponStatus;
 
     @PostPersist
     public void onPostPersist(){
-        OrderTaken orderTaken = new OrderTaken();
-        BeanUtils.copyProperties(this, orderTaken);
-        orderTaken.publishAfterCommit();
-    }
+        if(this.couponStatus.equals("sending")){
+            CouponSent couponSent = new CouponSent();  
+            BeanUtils.copyProperties(this, couponSent);
+            couponSent.setCouponStatus("valid");
+            couponSent.publishAfterCommit();
+        }
 
+    }
     @PostUpdate
     public void onPostUpdate(){
-        CancelOrderTaken cancelOrderTaken = new CancelOrderTaken();
-        BeanUtils.copyProperties(this, cancelOrderTaken);
-        cancelOrderTaken.publishAfterCommit();
+        CouponCanceled couponCanceled = new CouponCanceled();
+        BeanUtils.copyProperties(this, couponCanceled);
+        couponCanceled.publishAfterCommit();
+
+    }
+    @PrePersist
+    public void onPrePersist(){
+        try{
+            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+        } catch (InterruptedException e) {
+           e.printStackTrace();
+        }
     }
 
-    public Long getOrderMgmtId() {
-        return orderMgmtId;
+    public Long getCouponCode() {
+        return couponCode;
     }
 
-    public void setOrderMgmtId(Long orderMgmtId) {
-        this.orderMgmtId = orderMgmtId;
+    public void setCouponCode(Long couponCode) {
+        this.couponCode = couponCode;
+    }
+    public Long getCustomerId() {
+        return customerId;
     }
 
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
     public Long getOrderId() {
         return orderId;
     }
@@ -280,36 +293,34 @@ public class Ordermgmt {
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
     }
-
-    public Long getItemId() {
-        return itemId;
+    
+    public String getCouponStatus() {
+        return couponStatus;
     }
 
-    public void setItemId(Long itemId) {
-        this.itemId = itemId;
+    public void setCouponStatus(String couponStatus) {
+        this.couponStatus = couponStatus;
     }
+}
 
-    public String getItemName() {
-        return itemName;
-    }
-    .... 생략
 ```
 
 Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 하였고 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다 
 
-OrdermgmtRepository.java
+CouponRepository.java
 ```
 package bookdelivery;
-
+import java.util.Optional;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-@RepositoryRestResource(collectionResourceRel="ordermgmts", path="ordermgmts")
-public interface OrdermgmtRepository extends PagingAndSortingRepository<Ordermgmt, Long>{
+@RepositoryRestResource(collectionResourceRel="coupons", path="coupons")
+public interface CouponRepository extends PagingAndSortingRepository<Coupon, Long>{
+
+    Optional<Coupon> findByOrderId(Long orderId);
 
 }
 ```
-
 
 - 분석단계에서의 유비쿼터스 랭귀지 (업무현장에서 쓰는 용어) 를 사용하여 소스코드가 서술되었는가?
 
@@ -319,13 +330,13 @@ public interface OrdermgmtRepository extends PagingAndSortingRepository<Ordermgm
 
 주문 결제 후 ordermgmts 주문 접수하기 POST
 ```
-http localhost:8082/ordermgmts orderId=1 itemId=1 itemName="ITbook" qty=1 customerName="HanYongSun" deliveryAddress="kyungkido sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="order"
+http POST localhost:8088/orders customerId=7777 customerName="HeidiCho" itemId=123 itemName="ITbook" qty=3 itemPrice=1000 deliveryAddress="kyungkido sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="orderPlaced"
 ```
 ![image](https://user-images.githubusercontent.com/78421066/124939757-5b5ab000-e044-11eb-808b-2f610e6a6677.png)
 
 order 주문 취소하기 PATCH 
 ```
-http PATCH localhost:8088/orders/5 orderStatus="orderCanceled"
+http PATCH localhost:8088/orders/1 orderStatus="orderCanceled"
 ```
 ![8_주문취소](https://user-images.githubusercontent.com/85722733/125205690-7cc6d080-e2be-11eb-972f-3877814c55e6.jpg)
 
@@ -335,36 +346,29 @@ http PATCH localhost:8088/orders/5 orderStatus="orderCanceled"
 
 - 마이크로 서비스간 Request-Response 호출에 있어 대상 서비스를 어떠한 방식으로 찾아서 호출 하였는가? (Service Discovery, REST, FeignClient)
 
-요구사항대로 주문이 들어와야지만 결제 서비스를 호출할 수 있도록 주문 시 결제 처리를 동기식으로 호출하도록 한다. 
+요구사항대로 점주가 주문 접수를 해야지만 쿠폰 발행 서비스를 호출할 수 있도록 주문 접수 시 쿠폰 발행 처리를 동기식으로 호출하도록 한다. 
 
-Order.java Entity Class에 @PostPersist로 주문 생성 직후 결제를 호출하도록 처리하였다
+Ordermgmt.java Entity Class에 @PostPersist로 주문 접수 직후 쿠폰 발행을 호출하도록 처리하였다
 ```
 @PostPersist
     public void onPostPersist(){
-        OrderPlaced orderPlaced = new OrderPlaced();
-        BeanUtils.copyProperties(this, orderPlaced);
-        orderPlaced.publishAfterCommit();
+        OrderTaken orderTaken = new OrderTaken();
+        BeanUtils.copyProperties(this, orderTaken);
+        orderTaken.publishAfterCommit();
 
-        //Following code causes dependency to external APIs
-        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
+        bookdelivery.external.Coupon coupon = new bookdelivery.external.Coupon();
 
-        bookdelivery.external.Payment payment = new bookdelivery.external.Payment();
-        //mappings goes here
-        //add
-        payment.setOrderId(this.getOrderId());
-        payment.setItemPrice(this.getItemPrice());
-        payment.setItemName(this.getItemName());
-        payment.setQty(this.getQty());
-        payment.setCustomerName(this.getCustomerName());
-        payment.setDeliveryAddress(this.getDeliveryAddress());
-        payment.setDeliveryPhoneNumber(this.getDeliveryPhoneNumber());
-        OrderApplication.applicationContext.getBean(bookdelivery.external.PaymentService.class)
-            .pay(payment);
+        coupon.setCustomerId(orderTaken.getCustomerId());
+        coupon.setOrderId(orderTaken.getOrderId());
+        coupon.setCouponStatus("sending");
+        OrdermanagementApplication.applicationContext.getBean(bookdelivery.external.CouponService.class)
+            .sendCoupon(coupon);
+
     }
 ```
-동기식 호출은 PaymentService 클래스를 두어 FeignClient 를 이용하여 호출하도록 하였다.
+동기식 호출은 CouponService 클래스를 두어 FeignClient 를 이용하여 호출하도록 하였다.
 
-PaymentService.java
+CouponService.java
 
 ```
 package bookdelivery.external;
@@ -376,17 +380,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Date;
 
-@FeignClient(name="payment", url="http://localhost:8084", fallback = PaymentServiceFallback.class)
-public interface PaymentService {
+@FeignClient(name="coupon", url="http://localhost:8085")
+public interface CouponService {
 
-    @RequestMapping(method= RequestMethod.POST, path="/payments")
-    public void pay(@RequestBody Payment payment);
+    @RequestMapping(method= RequestMethod.POST, path="/coupons")
+    public void sendCoupon(@RequestBody Coupon coupon);
 
 }
 ```
-동기식 호출로 인하여, 결제 서비스에 장애 발생 시(서비스 다운) 주문 서비스에도 장애가 전파된다는 것을 확인
+동기식 호출로 인하여, 쿠폰발행 서비스에 장애 발생 시(서비스 다운) 주문관리 서비스에도 장애가 전파된다는 것을 확인
 ```
-Order 서비스 구동 & Payment 서비스 다운 되어 있는 상태에서는 주문 생성 시 오류 발생
+Ordermanagement 서비스 구동 & Coupon 서비스 다운 되어 있는 상태에서는 주문접수 시 오류 발생
 
 C:\workspace\bookdelivery>http POST localhost:8088/orders customerId=9005 customerName="Cho" itemId=4340 itemName="ABC" qty=2 itemPrice=1000 deliveryAddress="GwaCheon" deliveryPhoneNumber="01011112222" orderStatus="orderPlaced"
 
@@ -404,8 +408,8 @@ Transfer-Encoding: chunked
     "timestamp": "2021-07-11T14:44:14.537+0000"
 }
 
---> Payment 서비스 구동하여 주문 재생성 시 정상적으로 생성됨
-C:\workspace\bookdelivery\payment>mvn spring-boot:run
+--> Coupon 서비스 구동하여 주문접수 재생성 시 정상적으로 생성됨
+C:\workspace\bookdelivery\coupon>mvn spring-boot:run
 
 C:\workspace\bookdelivery>http POST localhost:8088/orders customerId=9005 customerName="Cho" itemId=4340 itemName="ABC" qty=2 itemPrice=1000 deliveryAddress="GwaCheon" deliveryPhoneNumber="01011112222" orderStatus="orderPlaced"
 
@@ -438,18 +442,18 @@ transfer-encoding: chunked
 
 - 서킷브레이커를 통하여 장애를 격리시킬 수 있는가?
 
-주문-결제 Req-Res구조에서 FeignClient 및 Spring Hystrix 를 사용하여 Fallback 기능을 구현하였다
+주문접수-쿠폰발행 Req-Res구조에서 FeignClient 및 Spring Hystrix 를 사용하여 Fallback 기능을 구현하였다
 
-Order 서비스의 application.yml 파일에 feign.hystrix.enabled: true 로 활성화시킨다
+Ordermanagement 서비스의 application.yml 파일에 feign.hystrix.enabled: true 로 활성화시킨다
 
 ```
 feign:
   hystrix:
     enabled: true
 ```
-PaymentService 에 feignClient fallback 옵션을 추가하였고 이를 위해 PaymentServiceFallback 클래스를 추가하였다
+CouponService 에 feignClient fallback 옵션을 추가하였고 이를 위해 CouponServiceFallback 클래스를 추가하였다
 
-PaymentService.java
+CouponService.java
 ```
 package bookdelivery.external;
 
@@ -460,34 +464,34 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Date;
 
-@FeignClient(name="payment", url="http://localhost:8084", fallback = PaymentServiceFallback.class)
-public interface PaymentService {
+@FeignClient(name="coupon", url="http://localhost:8085", fallback = CouponServiceFallback.class)
+public interface CouponService {
 
-    @RequestMapping(method= RequestMethod.POST, path="/payments")
-    public void pay(@RequestBody Payment payment);
+    @RequestMapping(method= RequestMethod.POST, path="/coupons")
+    public void sendCoupon(@RequestBody Coupon coupon);
 
 }
 ```
-PaymentServiceFallback.java
+CouponServiceFallback.java
 ```
 package bookdelivery.external;
 
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaymentServiceFallback implements PaymentService{
+public class CouponServiceFallback implements CouponService{
 
   @Override
-  public void pay(Payment payment) {
+  public void sendCoupon(Coupon coupon) {
     System.out.println("Circuit breaker has been opened. Fallback returned instead.");
   }
 
 }
 
 ```
-fallback 기능 없이 payment 서비스를 중지하고 주문 생성 시에는 오류가 발생했으나, 
+fallback 기능 없이 coupon 서비스를 중지하고 주문접수 생성 시에는 오류가 발생했으나, 
 
-위와 같이 fallback 기능 활성화 후에는 payment서비스가 동작하지 않더라도 주문 생성 시에 오류가 발생하지 않는다
+위와 같이 fallback 기능 활성화 후에는 coupon 서비스가 동작하지 않더라도 주문접수 생성 시에 오류가 발생하지 않는다
 
 ```
 C:\workspace\bookdelivery> http POST localhost:8088/orders customerId=7777 customerName="HeidiCho" itemId=4340 itemName="ABC" qty=2 itemPrice=1000 deliveryAddress="GwaCheon" deliveryPhoneNumber="01011112222" orderStatus="orderPlaced"
@@ -548,47 +552,52 @@ Circuit breaker has been opened. Fallback returned instead.
 
 - Correlation-key: 각 이벤트 건 (메시지)가 어떠한 폴리시를 처리할때 어떤 건에 연결된 처리건인지를 구별하기 위한 Correlation-key 연결을 제대로 구현 하였는가?
 
-카프카를 이용하여 주문완료 시 결제 처리를 제외한 나머지 모든 마이크로서비스 트랜잭션은 Pub/Sub 관계로 구현하였다. 
+카프카를 이용하여 주문완료 시 결제 처리 및 주문접수 시 쿠폰발행 처리를 제외한 나머지 모든 마이크로서비스 트랜잭션은 Pub/Sub 관계로 구현하였다. 
 
-아래는 주문취소 이벤트(OrderCanceled)를 카프카를 통해 주문관리(ordermanagement) 서비스에 연계받는 코드 내용이다. 
+아래는 결제취소 이벤트(PayCanceled)를 카프카를 통해 쿠폰(coupon) 서비스에 연계받는 코드 내용이다. 
 
-order 서비스에서는 고객이 주문 취소 시 PostUpdate로 OrderCanceled 이벤트를 발생시키고,
+payment 서비스에서는 고객의 주문취소 -> 점주의 주문접수취소 시 PostUpdate로 PayCanceled 이벤트를 발생시키고,
 ```
-public class Order {
+public class Payment {
     @PostUpdate
-      public void onPostUpdate(){
-        OrderCanceled orderCanceled = new OrderCanceled();
-        BeanUtils.copyProperties(this, orderCanceled);
-        orderCanceled.publishAfterCommit();
+    public void onPostUpdate(){
+        PayCanceled payCanceled = new PayCanceled();
+        BeanUtils.copyProperties(this, payCanceled);
+        payCanceled.publishAfterCommit();
     }
 ```
 
-ordermanagement 서비스에서는 카프카 리스너를 통해 order의 OrderCanceled 이벤트를 수신받아서 폴리시(cancelOrder) 처리하였다. (getOrderId()를 호출하여 Correlation-key 연결)
+coupon 서비스에서는 카프카 리스너를 통해 payment PayCanceled 이벤트를 수신받아서 폴리시(cancelCoupon) 처리하였다. (getOrderId()를 호출하여 Correlation-key 연결)
+coupon 서비스의 PolicyHandler.java
 ```
 @Service
 public class PolicyHandler{
-  @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverOrderCanceled_CancelOrder(@Payload OrderCanceled orderCanceled){
+    @Autowired CouponRepository couponRepository;
 
-        if(!orderCanceled.validate()) return;
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverPayCanceled_CancelCoupon(@Payload PayCanceled payCanceled){
 
-        System.out.println("\n\n##### listener CancelOrder : " + orderCanceled.toJson() + "\n\n");
+        if(!payCanceled.validate()) return;
 
-        // 주문 취소시 상태 UPDATE 필요, Correlation-key 연결
-        ordermgmtRepository.findByOrderId(orderCanceled.getOrderId()).ifPresent(ordermgmt->{
-            ordermgmtRepository.save(ordermgmt);
-        });
+        System.out.println("\n\n##### listener CancelCoupon : " + payCanceled.toJson() + "\n\n");
+
+        couponRepository.findByOrderId(payCanceled.getOrderId()).ifPresent(coupon->{
+            coupon.setCouponStatus("invalid");
+            couponRepository.save(coupon);
+        }); 
+
     }
+    ...생략
 ```
 
 
 - Scaling-out: Message Consumer 마이크로서비스의 Replica 를 추가했을때 중복없이 이벤트를 수신할 수 있는가?
 
-배송(delievery)서비스의 포트 추가(기존:8083, 추가:8093)하여 2개의 노드로 배송서비스를 실행한다. bookdelivery topic의 partition은 1개이기 때문에 기존 8083 포트의 서비스만 partition이 할당된다.
+쿠폰(coupon)서비스의 포트 추가(기존:8085, 추가:8095)하여 2개의 노드로 배송서비스를 실행한다. bookdelivery topic의 partition은 1개이기 때문에 기존 8085 포트의 서비스만 partition이 할당된다.
 ![image](https://user-images.githubusercontent.com/78421066/125026479-a534ac00-e0bf-11eb-878c-0a4e6cf3c5d9.png)
 
 
-주문관리서비스(ordermanagement)에서 이벤트가 발생하면 8083포트에 있는 delivery서비스에게만 이벤트 메세지가 수신되게 된다.
+결제(payment)에서 결제취소 이벤트가 발생하면 8085포트에 있는 coupon 서비스에게만 이벤트 메세지가 수신되게 된다.
 ```
 ##### listener StartDelivery : {"eventType":"OrderTaken","timestamp":"20210709140205","orderMgmtId":6,"orderId":1,"
 itemId":1,"itemName":"ITbook","qty":1,"customerName":"HanYongSun","deliveryAddress":"kyungkido sungnamsi","delivery
@@ -606,13 +615,13 @@ Hibernate:
         (?, ?, ?, ?, ?, ?)
 ```
 
-8093포트의 delivery서비스의 경우 메세지를 수신받지 못한다.
+8095포트의 coupon 서비스의 경우 메세지를 수신받지 못한다.
 
 ```
 변동사항 없음
 ```
 
-8083 포트를 중지 시키면 8093포트의 delivery 서비스에서 partition을 할당받는다
+8085 포트를 중지 시키면 8095포트의 delivery 서비스에서 partition을 할당받는다
 ![image](https://user-images.githubusercontent.com/78421066/125026249-1fb0fc00-e0bf-11eb-9af2-d9888005c67a.png)
 
 ### SAGA 패턴
@@ -642,7 +651,7 @@ order 서비스의 주문 생성이 완료되면 payment 서비스를 트리거�
 
 ![5_주문내역전달](https://user-images.githubusercontent.com/85722733/125205624-20fc4780-e2be-11eb-81dd-5d7dd97f7be8.jpg)
 
-점주가 주문을 접수하여 주문접수 건이 생성되면 
+점주가 주문을 접수하여 주문접수 건이 생성되면 coupon 서비스를 트리거하여 couponStatus가 "sending"인 경우에 쿠폰 발행이 되고
 
 ![6_주문접수생성](https://user-images.githubusercontent.com/85722733/125205658-49844180-e2be-11eb-953b-4732d80bcea4.jpg)
 
@@ -653,10 +662,11 @@ delivery 서비스에서 배송시작 이벤트가 트리거 된다
 ![7_카프카주문접수배달시작](https://user-images.githubusercontent.com/85722733/125205667-59038a80-e2be-11eb-9d30-a1d453635722.jpg)
 
 
-#### SAGA 패턴에 맞춘 Roll-Back 
-![사가2](https://user-images.githubusercontent.com/85722733/125394755-230cf600-e3e5-11eb-918b-48ddbb4e740d.png)
 
-order 서비스에서 주문취소가 발생하면 발행된 이벤트가 ordermanagement 서비스, payment 서비스, delivery 서비스로 트리거되어 해당 주문에 대해 주문접수취소, 결제취소 및 배송취소가 되도록 보상 트랜잭션을 발생시킨다
+#### SAGA 패턴에 맞춘 Roll-Back 
+![사가2_쿠폰](https://user-images.githubusercontent.com/85722733/126597194-9fbfc4ae-9d46-4dae-97ab-0dd139ce7155.png)
+
+order 서비스에서 주문취소가 발생하면 발행된 이벤트가 ordermanagement 서비스, delivery 서비스, payment 서비스, coupon 서비스로 트리거되어 해당 주문에 대해 주문접수취소, 배송취소, 결제취소 및 쿠폰취소가 되도록 보상 트랜잭션을 발생시킨다
 
 실행한 결과는 아래와 같다
 
@@ -668,11 +678,15 @@ OrderCanceled 이벤트로 인하여 orderManagement 서비스에서 주문상�
 
 ![8_5_주문접수취소호출](https://user-images.githubusercontent.com/85722733/125205700-8f410a00-e2be-11eb-8e9e-65560408ad0f.jpg)
 
-이로 인해 트리거되어 payment 및 delivery 서비스에서도 취소 이벤트가 발생하게 된다
+이로 인해 트리거되어 payment 및 delivery 서비스에서도 취소 이벤트가 발생하게 되는데
 
 ![8_5_결제취소호출](https://user-images.githubusercontent.com/85722733/125205708-9b2ccc00-e2be-11eb-9f26-788b5e07a017.jpg)
 
 ![8_5_배송취소호출](https://user-images.githubusercontent.com/85722733/125205702-95cf8180-e2be-11eb-95ba-50910f689f65.jpg)
+
+payment 서비스에서 결제취소 이벤트 발행 시 coupon 서비스에서 subscribe하여 해당 주문 건에 대해 고객에게 발행된 쿠폰에 대한 쿠폰상태를 invalid로 변경하면서 쿠폰을 무효화하게 된다 
+
+추가필요
 
 ![9_카프카취소이벤트](https://user-images.githubusercontent.com/85722733/125205715-a1bb4380-e2be-11eb-840a-f6680d818979.jpg)
 
@@ -680,15 +694,15 @@ OrderCanceled 이벤트로 인하여 orderManagement 서비스에서 주문상�
 ### CQRS
 - CQRS: Materialized View 를 구현하여, 타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 내 서비스의 화면 구성과 잦은 조회가 가능한가?
 
-주문/배송상태가 바뀔 때마다 고객이 마이페이지에서 상태를 확인할 수 있어야 한다는 요구사항에 따라 주문 서비스 내에 MyPage View를 모델링하였다
+고객이 본인에게 발행된 도서쿠폰을 마이쿠폰페이지에서 확인할 수 있어야 한다는 요구사항에 따라 주문 서비스 내에 MyCoupon View를 모델링하였다
 
 ![mypage](https://user-images.githubusercontent.com/85722733/125193030-68b2ad00-e285-11eb-9261-4b2dbf5cfb91.png)
 
-주문에 대한 결제완료(PayApproved) 시 orderId를 키값으로 MyPage 데이터도 생성되며 (요구사항으로 결제가 완료된 건에 대해서만 주문으로 인정하므로)
+고객에게 쿠폰 발행(CouponSent) 시 MyCoupon 데이터가 "valid" 상태로 생성되며 
 
-"결제완료(주문완료), 주문접수, 배송시작, 결제취소(주문취소)"의 이벤트에 따라 주문상태가 업데이트되도록 모델링하였다
+쿠폰무효화(취소)(CouponCanceled) 이벤트에 따라 쿠폰상태가 "invalid"로 업데이트되도록 모델링하였다
 
-MyPage View 의 속성값
+MyCoupon View 의 속성값
 
 ![속성값](https://user-images.githubusercontent.com/85722733/125192987-4f116580-e285-11eb-985b-9355ab17385a.png)
 
@@ -698,9 +712,9 @@ MSAEz 모델링 도구 내 View CQRS 설정 샘플
 
 자동생성된 소스는 아래와 같다
 
-MyPage CQRS처리를 위해 주문, 결제, 주문관리, 배송 서비스와 별개로 조회를 위한 MyPage_table 테이블이 생성된다
+MyCoupon CQRS처리를 위해 주문, 결제, 주문관리, 배송, 쿠폰 서비스와 별개로 조회를 위한 MyCoupon_table 테이블이 생성된다
 
-MyPage.java : 엔티티 클래스
+MyCoupon.java : 엔티티 클래스
 ```
 package bookdelivery;
 
@@ -708,156 +722,105 @@ import javax.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name="MyPage_table")
-public class MyPage {
+@Table(name="MyCoupon_table")
+public class MyCoupon {
 
         @Id
         @GeneratedValue(strategy=GenerationType.AUTO)
-        private Long orderId;
-        private String customerName;
-        private String itemName;
-        private Integer qty;
-        private Integer itemPrice;
-        private String orderStatus;
+        private Long myCouponId;
+        private Long couponCode;
+        private Long customerId;
+        private String couponStatus;
 
-
-        public Long getOrderId() {
-            return orderId;
+        public Long getMyCouponId() {
+            return myCouponId;
         }
 
-        public void setOrderId(Long orderId) {
-            this.orderId = orderId;
-        }
-        public String getCustomerName() {
-            return customerName;
+        public void setMyCouponId(Long myCouponId) {
+            this.myCouponId = myCouponId;
         }
 
-        public void setCustomerName(String customerName) {
-            this.customerName = customerName;
-        }
-        public String getItemName() {
-            return itemName;
+        public Long getCouponCode() {
+            return couponCode;
         }
 
-        public void setItemName(String itemName) {
-            this.itemName = itemName;
+        public void setCouponCode(Long couponCode) {
+            this.couponCode = couponCode;
         }
-        public Integer getQty() {
-            return qty;
-        }
-
-        public void setQty(Integer qty) {
-            this.qty = qty;
-        }
-        public Integer getItemPrice() {
-            return itemPrice;
+        public Long getCustomerId() {
+            return customerId;
         }
 
-        public void setItemPrice(Integer itemPrice) {
-            this.itemPrice = itemPrice;
+        public void setCustomerId(Long customerId) {
+            this.customerId = customerId;
         }
-        public String getOrderStatus() {
-            return orderStatus;
+        public String getCouponStatus() {
+            return couponStatus;
         }
 
-        public void setOrderStatus(String orderStatus) {
-            this.orderStatus = orderStatus;
+        public void setCouponStatus(String couponStatus) {
+            this.couponStatus = couponStatus;
         }
 
 }
 ```
-MyPageRepository.java : 퍼시스턴스
+MyCouponRepository.java : 퍼시스턴스
 ```
 package bookdelivery;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
-
+import java.util.Optional;
 import java.util.List;
 
-public interface MyPageRepository extends CrudRepository<MyPage, Long> {
+public interface MyCouponRepository extends CrudRepository<MyCoupon, Long> {
+
+    Optional<MyCoupon> findByCouponCode(Long couponCode);
 
 }
 ```
-MyPageViewHandler.java : 아래와 같이 결제완료를 통한 MyPage 주문 데이터 생성 및 주문상태 변경에 대한 이벤트 수신 처리부가 있다
+MyCouponViewHandler.java : 아래와 같이 쿠폰발행을 통한 MyCoupon 데이터 생성 및 쿠폰취소에 따른 쿠폰상태 변경에 대한 이벤트 수신 처리부가 있다
 
-주문에 대한 결제완료 시 이벤트
+쿠폰 발행 시 MyCoupon 데이터 생성 이벤트
 ```
 @StreamListener(KafkaProcessor.INPUT)
-    public void whenPayApproved_then_CREATE_1 (@Payload PayApproved payApproved) {
+    public void whenCouponSent_then_CREATE_1 (@Payload CouponSent couponSent) {
         try {
 
-            if (!payApproved.validate()) return;
+            if (!couponSent.validate()) return;
 
             // view 객체 생성
-            MyPage myPage = new MyPage();
+            MyCoupon myCoupon = new MyCoupon();
             // view 객체에 이벤트의 Value 를 set 함
-            myPage.setOrderId(payApproved.getOrderId());
-            myPage.setCustomerName(payApproved.getCustomerName());
-            myPage.setItemName(payApproved.getItemName());
-            myPage.setQty(payApproved.getQty());
-            myPage.setItemPrice(payApproved.getItemPrice());
-            myPage.setOrderStatus(payApproved.getOrderStatus());
+            myCoupon.setCouponCode(couponSent.getCouponCode());
+            myCoupon.setCustomerId(couponSent.getCustomerId());
+            myCoupon.setCouponStatus(couponSent.getCouponStatus());
             // view 레파지 토리에 save
-            myPageRepository.save(myPage);
-        
+            myCouponRepository.save(myCoupon);
+
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 ```
-주문상태 업데이트 이벤트
+쿠폰 취소 시 생성되어있는 MyCoupon 데이터의 쿠폰상태 업데이트 이벤트
 ```
 @StreamListener(KafkaProcessor.INPUT)
-    public void whenOrderTaken_then_UPDATE_1(@Payload OrderTaken orderTaken) {
+    public void whenCouponCanceled_then_UPDATE_1(@Payload CouponCanceled couponCanceled) {
         try {
-            if (!orderTaken.validate()) return;
+            if (!couponCanceled.validate()) return;
                 // view 객체 조회
-            Optional<MyPage> myPageOptional = myPageRepository.findById(orderTaken.getOrderId());
-            if( myPageOptional.isPresent()) {
-                MyPage myPage = myPageOptional.get();
-                // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setOrderStatus(orderTaken.getOrderStatus());
+            Optional<MyCoupon> myCouponOptional = myCouponRepository.findByCouponCode(couponCanceled.getCouponCode());
+
+            if( myCouponOptional.isPresent()) {
+                 MyCoupon myCoupon = myCouponOptional.get();
+            // view 객체에 이벤트의 eventDirectValue 를 set 함
+                 myCoupon.setCouponStatus(couponCanceled.getCouponStatus());
                 // view 레파지 토리에 save
-                myPageRepository.save(myPage);
-            }
-            
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whenDeliveryStarted_then_UPDATE_2(@Payload DeliveryStarted deliveryStarted) {
-        try {
-            if (!deliveryStarted.validate()) return;
-                // view 객체 조회
-            Optional<MyPage> myPageOptional = myPageRepository.findById(deliveryStarted.getOrderId());
-            if( myPageOptional.isPresent()) {
-                MyPage myPage = myPageOptional.get();
-                // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setOrderStatus(deliveryStarted.getOrderStatus());
-                // view 레파지 토리에 save
-                myPageRepository.save(myPage);
-            }
-            
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whenPayCanceled_then_UPDATE_3(@Payload PayCanceled payCanceled) {
-        try {
-            if (!payCanceled.validate()) return;
-                // view 객체 조회
-            Optional<MyPage> myPageOptional = myPageRepository.findById(payCanceled.getOrderId());
-            if( myPageOptional.isPresent()) {
-                MyPage myPage = myPageOptional.get();
-                // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setOrderStatus(payCanceled.getOrderStatus());
-                // view 레파지 토리에 save
-                myPageRepository.save(myPage);
-            }
-            
+                 myCouponRepository.save(myCoupon);
+                }
+
+
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -866,29 +829,22 @@ MyPageViewHandler.java : 아래와 같이 결제완료를 통한 MyPage 주문 �
 
 CQRS 테스트
 
-주문에 대한 결제완료 시 주문 정상 등록됨을 확인
+ordermanagement 서비스에서 주문접수 건 생성 시 쿠폰이 정상 발행됨을 확인
 
 ![1_payment발생](https://user-images.githubusercontent.com/85722733/125193044-7b2ce680-e285-11eb-9756-36c608bf30ab.png)
 
-아래와 같이 MyPage에도 주문상태가 'payApproved:orderFinallyPlaced'로 정상 등록되어 조회됨을 확인
+아래와 같이 MyCoupon에 쿠폰상태가 "valid"로 정상 등록되어 조회됨을 확인
 
 ![4_결제완료시주문완료로mypage상태업데이트](https://user-images.githubusercontent.com/85722733/125193056-8bdd5c80-e285-11eb-8457-a9771b96aded.png)
 
-점주가 주문 접수건 발생 시에는 배송시작 이벤트가 발행되어 MyPage에 해당 주문 건에 대한 주문상태가 'deliveryStarted' 상태로 변경되어 조회됨을 확인
-
-![5_점주가주문접수하여ordermgmt생성](https://user-images.githubusercontent.com/85722733/125193070-9ef02c80-e285-11eb-9629-06928f76cf17.png)
-
-![6_주문접수및배달시작이벤트발생](https://user-images.githubusercontent.com/85722733/125193423-52a5ec00-e287-11eb-8c2e-c388a747d017.png)
-
-![7_배달시작시mypage상태업데이트](https://user-images.githubusercontent.com/85722733/125193080-a6afd100-e285-11eb-9116-15670b9a842c.png)
-
-주문접수취소에 따른 결제취소완료 시 최종주문취소로 간주하여 주문상태가 'OrderFinallyCanceled'로 변경되며 MyPage에 해당 주문 건에 대한 주문상태가 'orderFinallyCanceled'로 동일하게 조회된다
+주문접수취소에 따른 결제취소완료 시 쿠폰취소 이벤트가 발행되어 쿠폰상태가 "invalid"로 변경되며 MyCoupon에 해당 쿠폰에 대한 쿠폰상태가 "invalid"로 동일하게 조회된다
 
 ![8_주문접수취소](https://user-images.githubusercontent.com/85722733/125193096-b29b9300-e285-11eb-9578-0adb198bc557.png)
 
 ![11_주문접수취소및결제취소및배달취소이벤트발생](https://user-images.githubusercontent.com/85722733/125193261-7fa5cf00-e286-11eb-8e69-69b00f2b5ec3.png)
 
 ![10_결제취소시mypage상태업데이트](https://user-images.githubusercontent.com/85722733/125193121-d52dac00-e285-11eb-9eea-e508c98b23bc.png)
+
 
 - Message Consumer 마이크로서비스가 장애상황에서 수신받지 못했던 기존 이벤트들을 다시 수신받아 처리하는가?
 
@@ -992,7 +948,7 @@ spring:
         - id: order
           uri: http://localhost:8081
           predicates:
-            - Path=/orders/**, /myPages/**
+            - Path=/orders/**, /myPages/**, /myCoupons/**
         - id: ordermanagement
           uri: http://localhost:8082
           predicates:
@@ -1005,6 +961,10 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path=/payments/** 
+        - id: coupon
+          uri: http://localhost:8085
+          predicates:
+            - Path=/coupons/**            
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -1019,7 +979,7 @@ spring:
 ---
 ```
 
-Gateway 포트인 8088을 통해서 주문을 생성시켜 8081 포트에서 서비스되고 있는 주문서비스(order)가 정상 동작함을 확인함
+Gateway 포트인 8088을 통해서 발행된 쿠폰이 정상 조회되는 것을 확인함
 
 ![GW2](https://user-images.githubusercontent.com/85722733/125040735-f13d1c00-e0d2-11eb-9a60-e2f1ba6a5e51.png)
 
