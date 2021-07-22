@@ -332,13 +332,13 @@ order 주문하기 POST
 ```
 http POST localhost:8088/orders customerId=7777 customerName="HeidiCho" itemId=123 itemName="ITbook" qty=3 itemPrice=1000 deliveryAddress="kyungkido sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="orderPlaced"
 ```
-![image](https://user-images.githubusercontent.com/78421066/124939757-5b5ab000-e044-11eb-808b-2f610e6a6677.png)
+![주문생성api](https://user-images.githubusercontent.com/85722733/126617513-e2689f6b-9cc2-46ff-8dbe-4c23389ebd5b.png)
 
 order 주문 취소하기 PATCH 
 ```
 http PATCH localhost:8088/orders/1 orderStatus="orderCanceled"
 ```
-![8_주문취소](https://user-images.githubusercontent.com/85722733/125205690-7cc6d080-e2be-11eb-972f-3877814c55e6.jpg)
+![주문취소api](https://user-images.githubusercontent.com/85722733/126617548-bfdaa293-6806-4804-b612-31335a17a1e6.png)
 
 
 ## 동기식 호출과 Fallback 처리 
@@ -574,37 +574,21 @@ public class PolicyHandler{
 
 쿠폰(coupon)서비스의 포트 추가(기존:8085, 추가:8095)하여 2개의 노드로 배송서비스를 실행한다. 
 
-bookdelivery topic의 partition은 1개이기 때문에 기존 8085 포트의 서비스만 partition이 할당된다.
+bookdelivery topic의 partition은 1개이기 때문에 새로 구동시킨 8095 포트의 서비스만 partition이 할당된다.
 
-![image](https://user-images.githubusercontent.com/78421066/125026479-a534ac00-e0bf-11eb-878c-0a4e6cf3c5d9.png)
-
-
-결제(payment)에서 결제취소 이벤트가 발생하면 8085포트에 있는 coupon 서비스에게만 이벤트 메세지가 수신되게 된다.
-```
-##### listener StartDelivery : {"eventType":"OrderTaken","timestamp":"20210709140205","orderMgmtId":6,"orderId":1,"
-itemId":1,"itemName":"ITbook","qty":1,"customerName":"HanYongSun","deliveryAddress":"kyungkido sungnamsi","delivery
-PhoneNumber":"01012341234","orderStatus":"order"}
+![쿠폰-8085포트](https://user-images.githubusercontent.com/85722733/126617716-99bc8a2a-04ec-4a7c-94c7-0fc6bb921e20.png)
+![쿠폰-8095포트](https://user-images.githubusercontent.com/85722733/126617765-38180863-9f41-413b-a94a-41d49cf17784.png)
 
 
-Hibernate:
-    call next value for hibernate_sequence
-Hibernate:
-    insert
-    into
-        delivery_table
-        (customer_name, delivery_address, delivery_phone_number, order_id, order_status, delivery_id)
-    values
-        (?, ?, ?, ?, ?, ?)
-```
+결제(payment)에서 결제취소 이벤트가 발생하면 8095포트에 있는 coupon 서비스에게만 이벤트 메세지가 수신되게 되고
 
-8095포트의 coupon 서비스의 경우 메세지를 수신받지 못한다.
+8085포트의 coupon 서비스의 경우 메세지를 수신받지 못한다.
 
-```
-변동사항 없음
-```
+![쿠폰-8095에서쿠폰취소로직](https://user-images.githubusercontent.com/85722733/126617867-b044ed1e-a1b9-4146-8d14-e8c855c42705.png)
 
-8085 포트를 중지 시키면 8095포트의 delivery 서비스에서 partition을 할당받는다
-![image](https://user-images.githubusercontent.com/78421066/125026249-1fb0fc00-e0bf-11eb-9af2-d9888005c67a.png)
+8095 포트를 중지 시키면 8085포트의 coupon 서비스에서 partition을 할당받는다
+![쿠폰-8085포트로재할당](https://user-images.githubusercontent.com/85722733/126617939-c650cab4-e74a-4784-9c01-a7268d1700cc.png)
+
 
 ### SAGA 패턴
 - 취소에 따른 보상 트랜잭션을 설계하였는가(Saga Pattern)
@@ -813,77 +797,48 @@ CQRS 테스트
 
 ordermanagement 서비스에서 주문접수 건 생성 시 쿠폰이 정상 발행됨을 확인
 
-![1_payment발생](https://user-images.githubusercontent.com/85722733/125193044-7b2ce680-e285-11eb-9756-36c608bf30ab.png)
+![주문접수생성api](https://user-images.githubusercontent.com/85722733/126618242-e1449cb4-c94e-4b3d-8d14-c3c2fc6cd195.png)
+
+![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126618304-0bf8f62a-fc35-4618-80e5-35dc2fdfa4cb.png)
 
 아래와 같이 MyCoupon에 쿠폰상태가 "valid"로 정상 등록되어 조회됨을 확인
 
-![4_결제완료시주문완료로mypage상태업데이트](https://user-images.githubusercontent.com/85722733/125193056-8bdd5c80-e285-11eb-8457-a9771b96aded.png)
+![주문접수생성-마이쿠폰생성](https://user-images.githubusercontent.com/85722733/126618162-4c36b7bf-342f-4461-bd62-4bea267626e0.png)
 
 주문접수취소에 따른 결제취소완료 시 쿠폰취소 이벤트가 발행되어 쿠폰상태가 "invalid"로 변경되며 MyCoupon에 해당 쿠폰에 대한 쿠폰상태가 "invalid"로 동일하게 조회된다
 
-![8_주문접수취소](https://user-images.githubusercontent.com/85722733/125193096-b29b9300-e285-11eb-9578-0adb198bc557.png)
+![주문취소api](https://user-images.githubusercontent.com/85722733/126618363-00c747b3-6b74-4ba8-a438-9165a0ba91d3.png)
 
-![11_주문접수취소및결제취소및배달취소이벤트발생](https://user-images.githubusercontent.com/85722733/125193261-7fa5cf00-e286-11eb-8e69-69b00f2b5ec3.png)
+![주문취소-주문접수취소](https://user-images.githubusercontent.com/85722733/126618468-c0b17305-5010-44fd-bedf-3ee3b301c492.png)
 
-![10_결제취소시mypage상태업데이트](https://user-images.githubusercontent.com/85722733/125193121-d52dac00-e285-11eb-9eea-e508c98b23bc.png)
+![주문취소-결제취소](https://user-images.githubusercontent.com/85722733/126618484-06fcf826-8d0e-4b94-b98e-c56085c12bbe.png)
+
+![주문취소-쿠폰취소폴리시호출](https://user-images.githubusercontent.com/85722733/126618493-f5a64707-5ebe-47ee-9808-9128c332a916.png)
+
+![주문취소-카프카](https://user-images.githubusercontent.com/85722733/126618508-0c90460a-d94f-4098-bcdc-b6e974fade32.png)
+
+![주문취소-쿠폰취소](https://user-images.githubusercontent.com/85722733/126618593-0e804dc6-41bf-4d68-b8ab-de0ac886dea6.png)
 
 
 - Message Consumer 마이크로서비스가 장애상황에서 수신받지 못했던 기존 이벤트들을 다시 수신받아 처리하는가?
 
 ordermanagement 서비스만 구동되고 delivery 서비스는 멈춰있는 상태이다. 주문관리에 이벤트가 발생하면 카프카 큐에 정상적으로 들어감을 확인할 수 있다.
-```
-주문관리 이벤트 생성
-$ http localhost:8082/ordermgmts orderId=1 itemId=1 itemName="ITbook" qty=1 customerName="HanYongSun" deliveryAddress="kyungkido sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="order"
-HTTP/1.1 201
-Content-Type: application/json;charset=UTF-8
-Date: Thu, 08 Jul 2021 23:16:56 GMT
-Location: http://localhost:8082/ordermgmts/1
-Transfer-Encoding: chunked
 
-{
-    "_links": {
-        "ordermgmt": {
-            "href": "http://localhost:8082/ordermgmts/1"
-        },
-        "self": {
-            "href": "http://localhost:8082/ordermgmts/1"
-        }
-    },
-    "customerName": "HanYongSun",
-    "deliveryAddress": "kyungkido sungnamsi",
-    "deliveryPhoneNumber": "01012341234",
-    "itemId": 1,
-    "itemName": "ITbook",
-    "orderId": 1,
-    "orderStatus": "order",
-    "qty": 1
-}
-```
+![배송중단-주문접수api성공](https://user-images.githubusercontent.com/85722733/126618714-cf610a8d-12c8-4954-8bff-c34fc0bd4f2c.png)
+
 카프카 Consumer 캡쳐
-![image](https://user-images.githubusercontent.com/78421066/125002634-5d4a6080-e090-11eb-8e55-994bf1c64a33.png)
+![배송중단-주문접수성공](https://user-images.githubusercontent.com/85722733/126618757-ded9e821-22f5-44fd-a6ac-768d25c3377c.png)
 
 
 배송(delivery)서비스 실행 및 실행 후 카프카에 적재된 메세지 수신 확인
 ```
 cd delivery
 mvn spring-boot:run
-
-##### listener StartDelivery : {"eventType":"OrderTaken","timestamp":"20210709081656","orderMgmtId":1,"orderId":1,"itemId":1,"itemName":"ITbook","qty":1,"customerName":"HanYongSun","deliveryAddress":"kyungkido sungnamsi","del
-iveryPhoneNumber":"01012341234","orderStatus":"order"}
-
-
-Hibernate:
-    call next value for hibernate_sequence
-Hibernate:
-    insert
-    into
-        delivery_table
-        (customer_name, delivery_address, delivery_phone_number, order_id, order_status, delivery_id)
-    values
-        (?, ?, ?, ?, ?, ?)
 ```
+![배송재시작-로그](https://user-images.githubusercontent.com/85722733/126618891-dc7af601-7cda-4784-b914-1730ac4c7254.png)
+
 카프카 Consumer 캡쳐
-![image](https://user-images.githubusercontent.com/78421066/125002840-ca5df600-e090-11eb-992c-ed72ee7cfca8.png)
+![배송재시작-카프카](https://user-images.githubusercontent.com/85722733/126618912-f347d685-3f71-481f-81b4-b768a6bae05d.png)
 
 
 ## 폴리글랏 퍼시스턴스
@@ -963,7 +918,8 @@ spring:
 
 Gateway 포트인 8088을 통해서 발행된 쿠폰이 정상 조회되는 것을 확인함
 
-![GW2](https://user-images.githubusercontent.com/85722733/125040735-f13d1c00-e0d2-11eb-9a60-e2f1ba6a5e51.png)
+![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126618066-771d9860-b750-443a-8c07-ade0d1634a5e.png)
+
 
 - 게이트웨이와 인증서버(OAuth), JWT 토큰 인증을 통하여 마이크로서비스들을 보호할 수 있는가?
 
