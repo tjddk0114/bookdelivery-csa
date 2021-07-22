@@ -328,7 +328,7 @@ public interface CouponRepository extends PagingAndSortingRepository<Coupon, Lon
 
 - 적용 후 Rest API의 테스트
 
-주문 결제 후 ordermgmts 주문 접수하기 POST
+order 주문하기 POST
 ```
 http POST localhost:8088/orders customerId=7777 customerName="HeidiCho" itemId=123 itemName="ITbook" qty=3 itemPrice=1000 deliveryAddress="kyungkido sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="orderPlaced"
 ```
