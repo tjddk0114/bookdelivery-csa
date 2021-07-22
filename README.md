@@ -133,8 +133,8 @@ Lv.2 Intensive Coursework
 <img src="https://user-images.githubusercontent.com/85722733/126592182-92ea9f11-2036-4fe0-869d-a90fcdd92e11.png"  width="80%" height="80%">
 
     - 과정중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행함
-        - '주문내역이 상점에 전달됨' 및 '주문상태 업데이트됨'은 이벤트에 의한 반응에 가까우므로 이벤트에서 제외
-        - '마이페이지에서 조회됨'은 발생한 사실, 결과라고 보기 어려우므로 이벤트에서 제외
+        - '쿠폰취소요청됨'은 이벤트에 의한 반응에 가까우므로 폴리시로 변경하고 이벤트에서 제외
+        - '쿠폰발행내역이 조회됨'은 발생한 사실, 결과라고 보기 어려우므로 View로 변경하고 이벤트에서 제외
 
 ### 액터, 커맨드 부착하여 읽기 좋게
 <img src="https://user-images.githubusercontent.com/85722733/126592198-385de8c4-bdb8-4bdb-ad54-2558c779f649.png"  width="65%" height="65%">
@@ -142,7 +142,7 @@ Lv.2 Intensive Coursework
 ### 어그리게잇으로 묶기
 <img src="https://user-images.githubusercontent.com/85722733/126592215-3624624e-981a-4cb9-ba26-7707b9d1a073.png"  width="80%" height="80%">
 
-    - 고객의 주문, 상점의 주문관리, 결제의 결제이력, 배송의 배송이력은 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들끼리 묶어줌
+    - 고객의 주문, 상점의 주문관리, 결제의 결제이력, 배송의 배송이력, 쿠폰의 쿠폰발행이력은 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들끼리 묶어줌
 
 ### 바운디드 컨텍스트로 묶기
 
@@ -150,7 +150,7 @@ Lv.2 Intensive Coursework
 
     - 도메인 서열 분리 
         - Core Domain:  order, ordermanagement : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 order의 경우 1주일 1회 미만, ordermanagement의 경우 1개월 1회 미만
-        - Supporting Domain:  delivery : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함
+        - Supporting Domain:  delivery, coupon : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함
         - General Domain:   pay : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
 
 ### 폴리시 부착 (괄호는 수행주체, 폴리시 부착을 둘째단계에서 해놔도 상관 없음. 전체 연계가 초기에 드러남)
@@ -168,16 +168,18 @@ Lv.2 Intensive Coursework
     - 고객이 도서를 선택하여 주문한다 (ok)
     - 고객이 결제한다 (ok)
     - 결제가 완료되면 주문 내역이 도서상점에 전달된다 (ok)
-    - 상점주인이 주문을 접수하고 도서를 포장한다 (ok)
+    - 상점주인이 주문을 접수함과 동시에 도서를 포장한다 (ok)
+    - 상점주인은 주문 접수 시 고객에게 도서쿠폰을 발행할 수 있다 (ok)
     - 도서 포장이 완료되면 상점소속배달기사가 배송을 시작한다 (ok)
-    
 
 <img src="https://user-images.githubusercontent.com/85722733/126592351-98d1147e-fc4e-4fa8-bf74-9809802bc4d6.png"  width="80%" height="80%">
  
     - 고객이 주문을 취소할 수 있다 (ok)
     - 주문이 취소되면 배송 및 결제가 취소된다 (ok)
+    - 결제 취소 시 해당 주문으로 발행된 쿠폰이 있다면 해당 쿠폰이 무효화된다 (ok)
     - 고객이 주문상태를 중간중간 조회한다 (ok)
     - 주문/배송상태가 바뀔 때마다 고객이 마이페이지에서 상태를 확인할 수 있다 (ok)
+    - 고객이 마이쿠폰 페이지에서 본인에게 발행된 도서쿠폰을 확인할 수 있다 (ok)
 
 
 ### 비기능 요구사항에 대한 검증
@@ -185,7 +187,8 @@ Lv.2 Intensive Coursework
 
     - 마이크로서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
         - 고객 주문시 결제처리:  결제가 완료되지 않은 주문은 절대 받지 않는다는 경영자의 오랜 신념(?)에 따라, ACID 트랜잭션 적용. 주문완료시 결제처리에 대해서는 Request-Response 방식 처리
-        - 결제 완료시 점주연결 및 배송처리:  payment 에서 ordermanagement 마이크로서비스로 주문요청이 전달되는 과정에 있어서 ordermanagement 마이크로서비스가 별도의 배포주기를 가지기 때문에 Eventual Consistency 방식으로 트랜잭션 처리함.
+        - 주문 접수시 쿠폰발행처리: 주문접수된 건의 고객만 쿠폰발행 대상이 될 수 있도록 주문접수완료 시 쿠폰발행처리에 대해서는 Request-Response 방식 처리
+	- 결제 완료시 점주연결 및 배송처리:  payment 에서 ordermanagement 마이크로서비스로 주문요청이 전달되는 과정에 있어서 ordermanagement 마이크로서비스가 별도의 배포주기를 가지기 때문에 Eventual Consistency 방식으로 트랜잭션 처리함.
         - 나머지 모든 inter-microservice 트랜잭션: 데이터 일관성의 시점이 크리티컬하지 않은 모든 경우가 대부분이라 판단, Eventual Consistency 를 기본으로 채택함.
 
 
