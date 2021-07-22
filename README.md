@@ -47,7 +47,7 @@ Lv.2 Intensive Coursework
   - 결제가 완료되어야만 주문이 완료된다 (결제가 되지 않은 주문건은 아예 거래가 성립되지 않아야 한다 Sync 호출)
   - 상점주인이 주문 접수를 해야지만 쿠폰을 발행할 수 있다 (Sync 호출) (추가)
 2. 장애격리
-  - 주문관리(Ordermanagement) 기능이 수행되지 않더라도 주문(Order)은 365일 24시간 받을 수 있어야 한다 Async (event-driven), Eventual Consistency 
+  - 배송관리(Delivery) 기능이 수행되지 않더라도 주문접수관리(Ordermanagement)는 365일 24시간 가능해야 한다 Async (event-driven), Eventual Consistency 
   - 결제시스템이 과중되면 사용자를 잠시동안 받지 않고 결제를 잠시후에 하도록 유도한다 Circuit breaker, fallback
   - 쿠폰시스템이 과중되면 쿠폰 발행 요청을 잠시동안 받지 않고 잠시후에 발행하도록 유도한다 Circuit breaker, fallback (추가)
 3. 성능
