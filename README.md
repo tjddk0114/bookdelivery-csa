@@ -47,7 +47,7 @@ Lv.2 Intensive Coursework
   - 결제가 완료되어야만 주문이 완료된다 (결제가 되지 않은 주문건은 아예 거래가 성립되지 않아야 한다 Sync 호출)
   - 상점주인이 주문 접수를 해야지만 쿠폰을 발행할 수 있다 (Sync 호출) (추가)
 2. 장애격리
-  - 배송관리(Delivery) 기능이 수행되지 않더라도 주문접수관리(Ordermanagement)는 365일 24시간 가능해야 한다 Async (event-driven), Eventual Consistency 
+  - 배송관리(Delivery) 기능이 수행되지 않더라도 주문접수(Ordermanagement)는 365일 24시간 가능해야 한다 Async (event-driven), Eventual Consistency 
   - 결제시스템이 과중되면 사용자를 잠시동안 받지 않고 결제를 잠시후에 하도록 유도한다 Circuit breaker, fallback
   - 쿠폰시스템이 과중되면 쿠폰 발행 요청을 잠시동안 받지 않고 잠시후에 발행하도록 유도한다 Circuit breaker, fallback (추가)
 3. 성능
@@ -127,26 +127,26 @@ Lv.2 Intensive Coursework
 * 3조 조성아 개인 모델링 결과:
 
 ### 이벤트 도출
-<img src="https://user-images.githubusercontent.com/85722733/124441029-39e49480-ddb6-11eb-8310-132caa4c887e.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592134-afa1e97d-fced-4931-8e70-8014e55978c2.png"  width="80%" height="80%">
 
 ### 부적격 이벤트 탈락
-<img src="https://user-images.githubusercontent.com/85722733/124441079-48cb4700-ddb6-11eb-8d12-57845e061f62.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592182-92ea9f11-2036-4fe0-869d-a90fcdd92e11.png"  width="80%" height="80%">
 
     - 과정중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행함
         - '주문내역이 상점에 전달됨' 및 '주문상태 업데이트됨'은 이벤트에 의한 반응에 가까우므로 이벤트에서 제외
         - '마이페이지에서 조회됨'은 발생한 사실, 결과라고 보기 어려우므로 이벤트에서 제외
 
 ### 액터, 커맨드 부착하여 읽기 좋게
-<img src="https://user-images.githubusercontent.com/85722733/124451688-9ba9fc00-ddc0-11eb-815e-0e0c6f685b69.png"  width="65%" height="65%">
+<img src="https://user-images.githubusercontent.com/85722733/126592198-385de8c4-bdb8-4bdb-ad54-2558c779f649.png"  width="65%" height="65%">
 
 ### 어그리게잇으로 묶기
-<img src="https://user-images.githubusercontent.com/85722733/124451712-a5336400-ddc0-11eb-9561-e47f8b28b205.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592215-3624624e-981a-4cb9-ba26-7707b9d1a073.png"  width="80%" height="80%">
 
     - 고객의 주문, 상점의 주문관리, 결제의 결제이력, 배송의 배송이력은 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들끼리 묶어줌
 
 ### 바운디드 컨텍스트로 묶기
 
-<img src="https://user-images.githubusercontent.com/85722733/124451753-aebccc00-ddc0-11eb-91ca-6b6355106898.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592234-4e74761f-bcf3-4b7f-99ce-bc676a278008.png"  width="80%" height="80%">
 
     - 도메인 서열 분리 
         - Core Domain:  order, ordermanagement : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 order의 경우 1주일 1회 미만, ordermanagement의 경우 1개월 1회 미만
@@ -155,21 +155,15 @@ Lv.2 Intensive Coursework
 
 ### 폴리시 부착 (괄호는 수행주체, 폴리시 부착을 둘째단계에서 해놔도 상관 없음. 전체 연계가 초기에 드러남)
 
-<img src="https://user-images.githubusercontent.com/85722733/124451790-b7150700-ddc0-11eb-9e95-4cac51bb165e.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592251-99aae8c7-462a-438e-b5ce-54e35ac63bf3.png"  width="80%" height="80%">
 
-### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
+### 폴리시의 이동과 컨텍스트 매핑(점선은 Pub/Sub, 실선은 Req/Resp)을 통해 완성된 모형
 
-<img src="https://user-images.githubusercontent.com/85722733/124451818-bf6d4200-ddc0-11eb-816d-8e55df0fdabc.png"  width="80%" height="80%">
-
-### 완성된 모형
-
-![MSAEz](https://user-images.githubusercontent.com/85722733/124453306-36efa100-ddc2-11eb-9620-d07221ed7e78.png)
-
-    - View Model 추가
+<img src="https://user-images.githubusercontent.com/85722733/126592292-cdf1718e-ac9a-4a02-8c62-d43702e74f56.png"  width="80%" height="80%">
 
 ### 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
 
-<img src="https://user-images.githubusercontent.com/85722733/124564387-f8b6b800-de7b-11eb-8311-b9928bc13374.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592326-3e84a1e3-b100-428d-a9b1-861df5b411e1.png"  width="80%" height="80%">
 
     - 고객이 도서를 선택하여 주문한다 (ok)
     - 고객이 결제한다 (ok)
@@ -178,7 +172,7 @@ Lv.2 Intensive Coursework
     - 도서 포장이 완료되면 상점소속배달기사가 배송을 시작한다 (ok)
     
 
-<img src="https://user-images.githubusercontent.com/85722733/124564426-0409e380-de7c-11eb-8689-523340b2adf2.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592351-98d1147e-fc4e-4fa8-bf74-9809802bc4d6.png"  width="80%" height="80%">
  
     - 고객이 주문을 취소할 수 있다 (ok)
     - 주문이 취소되면 배송 및 결제가 취소된다 (ok)
@@ -187,7 +181,7 @@ Lv.2 Intensive Coursework
 
 
 ### 비기능 요구사항에 대한 검증
-<img src="https://user-images.githubusercontent.com/85722733/124566367-f190a980-de7d-11eb-9a9d-ba86558a095f.png"  width="80%" height="80%">
+<img src="https://user-images.githubusercontent.com/85722733/126592370-332e796c-d115-453d-82a1-4ff8a9c414c1.png"  width="80%" height="80%">
 
     - 마이크로서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
         - 고객 주문시 결제처리:  결제가 완료되지 않은 주문은 절대 받지 않는다는 경영자의 오랜 신념(?)에 따라, ACID 트랜잭션 적용. 주문완료시 결제처리에 대해서는 Request-Response 방식 처리
@@ -195,10 +189,12 @@ Lv.2 Intensive Coursework
         - 나머지 모든 inter-microservice 트랜잭션: 데이터 일관성의 시점이 크리티컬하지 않은 모든 경우가 대부분이라 판단, Eventual Consistency 를 기본으로 채택함.
 
 
-
 ## 헥사고날 아키텍처 다이어그램 도출
     
 ![헥사고날아키텍쳐](https://user-images.githubusercontent.com/85722733/125288478-29ee2700-e359-11eb-93f0-acdc66789152.png)
+
+신규 서비스인 쿠폰(Coupon) 서비스 추가
+![헥사고날아키텍쳐_쿠폰추가](https://user-images.githubusercontent.com/85722733/126592416-e4c14032-113a-4a0b-98d7-a0bef74bc3f0.png)
 
     - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
     - 호출관계에서 Pub/Sub 과 Req/Resp 를 구분함
