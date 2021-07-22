@@ -1,9 +1,9 @@
 # bookdelivery-csa
-Lv.2 Intensive Coursework Group 3
+Lv.2 Intensive Coursework
 
 <img src="https://user-images.githubusercontent.com/85722733/126579042-af1eaaeb-909e-4ec6-a8e6-cc4ab3d80ef2.png"  width="50%" height="50%">
 
-# 온라인 도서상점 (도서배송 서비스)
+# 온라인 도서상점 (도서배송 서비스) (3조 - 조성아 개인평가)
 
 # Table of contents
 
@@ -32,21 +32,27 @@ Lv.2 Intensive Coursework Group 3
 1. 고객이 도서를 선택하여 주문(Order)한다
 2. 고객이 결제(Pay)한다
 3. 결제가 완료되면 주문 내역이 도서상점에 전달된다(Ordermanagement)
-4. 상점주인이 주문을 접수하고 도서를 포장한다
-5. 도서 포장이 완료되면 상점소속배달기사가 배송(Delivery)을 시작한다.
-6. 고객이 주문을 취소할 수 있다
-7. 주문이 취소되면 배송 및 결제가 취소된다
-8. 고객이 주문상태를 중간중간 조회한다
-9. 주문/배송상태가 바뀔 때마다 고객이 마이페이지에서 상태를 확인할 수 있다
+4. 상점주인이 주문을 접수함과 동시에 도서를 포장한다
+5. 상점주인은 주문 접수 시 고객에게 도서쿠폰을 발행할 수 있다(Coupon) (추가)
+6. 도서 포장이 완료되면 상점소속배달기사가 배송(Delivery)을 시작한다
+7. 고객이 주문을 취소할 수 있다
+8. 주문이 취소되면 배송 및 결제가 취소된다
+9. 결제 취소 시 해당 주문으로 발행된 쿠폰이 있다면 해당 쿠폰이 무효화된다 (추가)
+10. 고객이 주문상태를 중간중간 조회한다
+11. 주문/배송상태가 바뀔 때마다 고객이 마이페이지에서 상태를 확인할 수 있다
+12. 고객이 마이쿠폰 페이지에서 본인에게 발행된 도서쿠폰을 확인할 수 있다 (추가)
 
 비기능적 요구사항
 1. 트랜잭션
   - 결제가 완료되어야만 주문이 완료된다 (결제가 되지 않은 주문건은 아예 거래가 성립되지 않아야 한다 Sync 호출)
+  - 상점주인이 주문 접수를 해야지만 쿠폰을 발행할 수 있다 (Sync 호출) (추가)
 2. 장애격리
   - 주문관리(Ordermanagement) 기능이 수행되지 않더라도 주문(Order)은 365일 24시간 받을 수 있어야 한다 Async (event-driven), Eventual Consistency 
   - 결제시스템이 과중되면 사용자를 잠시동안 받지 않고 결제를 잠시후에 하도록 유도한다 Circuit breaker, fallback
+  - 쿠폰시스템이 과중되면 쿠폰 발행 요청을 잠시동안 받지 않고 잠시후에 발행하도록 유도한다 Circuit breaker, fallback (추가)
 3. 성능
   - 고객이 마이페이지에서 배송상태를 확인할 수 있어야 한다 CQRS
+  - 고객이 본인에게 발행된 도서쿠폰을 마이쿠폰페이지에서 확인할 수 있어야 한다 CQRS (추가)
 
 
 # 체크포인트
@@ -116,10 +122,9 @@ Lv.2 Intensive Coursework Group 3
 ## TO-BE 조직 (Vertically-Aligned)
   <img src="https://user-images.githubusercontent.com/85722733/124564081-a9708780-de7b-11eb-93aa-42c819be9059.png"  width="80%" height="80%">
 
-
 ## Event Storming 결과
 * MSAEz 로 모델링한 이벤트스토밍 결과:  http://www.msaez.io/#/storming/null/348fa7c90636e01a5525272b163ef307
-
+* 3조 조성아 개인 모델링 결과:
 
 ### 이벤트 도출
 <img src="https://user-images.githubusercontent.com/85722733/124441029-39e49480-ddb6-11eb-8310-132caa4c887e.png"  width="80%" height="80%">
@@ -191,7 +196,6 @@ Lv.2 Intensive Coursework Group 3
 
 
 
-
 ## 헥사고날 아키텍처 다이어그램 도출
     
 ![헥사고날아키텍쳐](https://user-images.githubusercontent.com/85722733/125288478-29ee2700-e359-11eb-93f0-acdc66789152.png)
@@ -215,6 +219,12 @@ cd ordermanagement
 mvn spring-boot:run  
 
 cd delivery
+mvn spring-boot:run 
+
+cd coupon
+mvn spring-boot:run 
+
+cd gateway
 mvn spring-boot:run 
 ```
 
