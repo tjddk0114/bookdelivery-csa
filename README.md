@@ -392,51 +392,49 @@ public interface CouponService {
 ```
 Ordermanagement 서비스 구동 & Coupon 서비스 다운 되어 있는 상태에서는 주문접수 시 오류 발생
 
-C:\workspace\bookdelivery>http POST localhost:8088/orders customerId=9005 customerName="Cho" itemId=4340 itemName="ABC" qty=2 itemPrice=1000 deliveryAddress="GwaCheon" deliveryPhoneNumber="01011112222" orderStatus="orderPlaced"
-
-HTTP/1.1 500
-Connection: close
+PS C:\> http POST localhost:8088/ordermgmts orderId=7 customerId=7779 itemName="ITbook" qty=3 customerName="Jenna" deliveryAddress="Gyeonggido Sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="orderTaken"
+HTTP/1.1 500 Internal Server Error
 Content-Type: application/json;charset=UTF-8
-Date: Sun, 11 Jul 2021 14:44:14 GMT
-Transfer-Encoding: chunked
+Date: Thu, 22 Jul 2021 09:04:21 GMT
+transfer-encoding: chunked
 
 {
     "error": "Internal Server Error",
     "message": "Could not commit JPA transaction; nested exception is javax.persistence.RollbackException: Error while committing the transaction",
-    "path": "/orders",
+    "path": "/ordermgmts",
     "status": 500,
-    "timestamp": "2021-07-11T14:44:14.537+0000"
+    "timestamp": "2021-07-22T09:04:21.479+0000"
 }
 
---> Coupon 서비스 구동하여 주문접수 재생성 시 정상적으로 생성됨
+--> Coupon 서비스 구동
 C:\workspace\bookdelivery\coupon>mvn spring-boot:run
 
-C:\workspace\bookdelivery>http POST localhost:8088/orders customerId=9005 customerName="Cho" itemId=4340 itemName="ABC" qty=2 itemPrice=1000 deliveryAddress="GwaCheon" deliveryPhoneNumber="01011112222" orderStatus="orderPlaced"
-
+--> 주문접수 재생성 시 정상적으로 생성됨
+PS C:\> http POST localhost:8088/ordermgmts orderId=7 customerId=7779 itemName="ITbook" qty=3 customerName="Jenna" deliveryAddress="Gyeonggido Sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="orderTaken"
 HTTP/1.1 201 Created
 Content-Type: application/json;charset=UTF-8
-Date: Sun, 11 Jul 2021 14:50:14 GMT
-Location: http://localhost:8081/orders/1
+Date: Thu, 22 Jul 2021 09:12:21 GMT
+Location: http://localhost:8082/ordermgmts/8
 transfer-encoding: chunked
 
 {
     "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/1"
+        "ordermgmt": {
+            "href": "http://localhost:8082/ordermgmts/8"
         },
         "self": {
-            "href": "http://localhost:8081/orders/1"
+            "href": "http://localhost:8082/ordermgmts/8"
         }
     },
-    "customerId": 9005,
-    "customerName": "Cho",
-    "deliveryAddress": "GwaCheon",
-    "deliveryPhoneNumber": "01011112222",
-    "itemId": 4340,
-    "itemName": "ABC",
-    "itemPrice": 1000,
-    "orderStatus": "orderPlaced",
-    "qty": 2
+    "customerId": 7779,
+    "customerName": "Jenna",
+    "deliveryAddress": "Gyeonggido Sungnamsi",
+    "deliveryPhoneNumber": "01012341234",
+    "itemId": null,
+    "itemName": "ITbook",
+    "orderId": 7,
+    "orderStatus": "orderTaken",
+    "qty": 3
 }
 ```
 
@@ -494,55 +492,35 @@ fallback 기능 없이 coupon 서비스를 중지하고 주문접수 생성 시�
 위와 같이 fallback 기능 활성화 후에는 coupon 서비스가 동작하지 않더라도 주문접수 생성 시에 오류가 발생하지 않는다
 
 ```
-C:\workspace\bookdelivery> http POST localhost:8088/orders customerId=7777 customerName="HeidiCho" itemId=4340 itemName="ABC" qty=2 itemPrice=1000 deliveryAddress="GwaCheon" deliveryPhoneNumber="01011112222" orderStatus="orderPlaced"
+PS C:\> http POST localhost:8088/ordermgmts orderId=13 customerId=7781 itemName="ITbook" qty=3 customerName="BJ" deliveryAddress="Gyeonggido Sungnamsi" deliveryPhoneNumber="01012341234" orderStatus="orderTaken"
 HTTP/1.1 201 Created
 Content-Type: application/json;charset=UTF-8
-Date: Sun, 11 Jul 2021 15:54:23 GMT
-Location: http://localhost:8081/orders/3
+Date: Thu, 22 Jul 2021 09:22:22 GMT
+Location: http://localhost:8082/ordermgmts/2
 transfer-encoding: chunked
 
 {
     "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/3"
+        "ordermgmt": {
+            "href": "http://localhost:8082/ordermgmts/2"
         },
         "self": {
-            "href": "http://localhost:8081/orders/3"
+            "href": "http://localhost:8082/ordermgmts/2"
         }
     },
-    "customerId": 7777,
-    "customerName": "HeidiCho",
-    "deliveryAddress": "GwaCheon",
-    "deliveryPhoneNumber": "01011112222",
-    "itemId": 4340,
-    "itemName": "ABC",
-    "itemPrice": 1000,
-    "orderStatus": "orderPlaced",
-    "qty": 2
+    "customerId": 7781,
+    "customerName": "BJ",
+    "deliveryAddress": "Gyeonggido Sungnamsi",
+    "deliveryPhoneNumber": "01012341234",
+    "itemId": null,
+    "itemName": "ITbook",
+    "orderId": 13,
+    "orderStatus": "orderTaken",
+    "qty": 3
 }
 ```
-```
-Hibernate:
-    insert
-    into
-        order_table
-        (customer_id, customer_name, delivery_address, delivery_phone_number, item_id, item_name, item_price, order_status, qty, order_id)
-    values
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-2021-07-12 00:54:23.262 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [1] as [BIGINT] - [7777]
-2021-07-12 00:54:23.262 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [2] as [VARCHAR] - [HeidiCho]
-2021-07-12 00:54:23.263 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [3] as [VARCHAR] - [GwaCheon]
-2021-07-12 00:54:23.263 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [4] as [VARCHAR] - [01011112222]
-2021-07-12 00:54:23.263 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [5] as [BIGINT] - [4340]
-2021-07-12 00:54:23.264 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [6] as [VARCHAR] - [ABC]
-2021-07-12 00:54:23.264 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [7] as [INTEGER] - [1000]
-2021-07-12 00:54:23.265 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [8] as [VARCHAR] - [orderPlaced]
-2021-07-12 00:54:23.265 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [9] as [INTEGER] - [2]
-2021-07-12 00:54:23.265 TRACE 12760 --- [nio-8081-exec-4] o.h.type.descriptor.sql.BasicBinder      : binding parameter [10] as [BIGINT] - [3]
-2021-07-12 00:54:23.268 DEBUG 12760 --- [strix-payment-2] o.s.c.openfeign.support.SpringEncoder    : Writing [bookdelivery.external.Payment@2d962b78] using [org.springframework.http.converter.json.MappingJackson2HttpMessageConverter@2e4166b7]
-Circuit breaker has been opened. Fallback returned instead.
-```
-위와 같이 fallack 옵션이 동작하여 "Circuit breaker has been opened. Fallback returned instead." 로그가 보여진다
+![주문접수-서킷브레이커](https://user-images.githubusercontent.com/85722733/126617386-3513649c-12ec-4d3b-a368-e3f515f32822.png)
+위와 같이 ordermanagement 서비스에서 fallack 옵션이 동작하여 "Circuit breaker has been opened. Fallback returned instead." 로그가 보여진다
 
 
 ## 비동기식 호출과 Eventual Consistency 
