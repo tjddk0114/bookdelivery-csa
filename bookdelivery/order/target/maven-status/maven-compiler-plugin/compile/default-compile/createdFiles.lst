@@ -1,0 +1,5 @@
+bookdelivery\MyCouponRepository.class
+bookdelivery\MyCoupon.class
+bookdelivery\MyCouponViewHandler.class
+bookdelivery\CouponCanceled.class
+bookdelivery\CouponSent.class

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookdelivery-config
+  namespace: bookdelivery
+data:
+  nsname: bookdelivery
