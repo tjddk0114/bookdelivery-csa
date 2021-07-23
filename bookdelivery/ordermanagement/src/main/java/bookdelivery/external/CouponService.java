@@ -8,9 +8,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Date;
 
+//로컬에서 url="http://localhost:8085"
 //운영에서는 url="http://coupon:8080"
 
-@FeignClient(name="coupon", url="http://localhost:8085", fallback = CouponServiceFallback.class)
+@FeignClient(name="coupon", url="http://coupon:8080", fallback = CouponServiceFallback.class)
 public interface CouponService {
 
     @RequestMapping(method= RequestMethod.POST, path="/coupons")
