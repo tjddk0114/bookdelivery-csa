@@ -1063,17 +1063,23 @@ Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 ms가 넘�
 
 
 ## Autoscale (HPA)
-주문 서비스에 HPA를 설정한다. 평균대비 CPU 20퍼 초과시 3개까지 pod 추가  
-![image](https://user-images.githubusercontent.com/85722738/125292390-60c63c00-e35d-11eb-8e39-f5597eeec376.png)
 
-현재 주문서비스 pod 상태 확인  
-![image](https://user-images.githubusercontent.com/85722738/125292058-06c57680-e35d-11eb-96c6-42da212b0306.png)
+쿠폰 서비스에 HPA를 설정한다. 평균대비 CPU 15% 초과시 3개까지 pod 추가  
+
+![오토스케일세팅](https://user-images.githubusercontent.com/85722733/126853232-1dd187f9-5915-4635-8b94-3f4d05013a1e.png)
+
+현재 쿠폰서비스 pod 상태 확인  
+
+![hpa_초기pod](https://user-images.githubusercontent.com/85722733/126853240-bdd36362-bb73-412a-9184-c0f48d5452c0.png)
 
 siege 로 부하테스트를 진행  
-![image](https://user-images.githubusercontent.com/85722738/125292601-94a16180-e35d-11eb-980e-7427c462f7ca.png)
+```
+root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://10.100.37.173:8080/coupons'
+```
 
-아래와 같이 scale out 되는것을 확인할 수 있다.  
-![image](https://user-images.githubusercontent.com/85722738/125293099-0da0b900-e35e-11eb-91bc-72ab25ba08fe.png)
+아래와 같이 쿠폰 pod가 3개까지 scale out 되는것을 확인할 수 있다
+
+![hpa_시즈후기](https://user-images.githubusercontent.com/85722733/126853292-e58003bb-1622-442e-9e48-d20f2b6da283.png)
 
 
 ## Zero-downtime deploy (Readiness Probe)
