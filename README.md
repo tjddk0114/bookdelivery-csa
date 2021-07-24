@@ -1044,13 +1044,13 @@ buildspec.yml 파일 내용
 
 ## 동기식 호출 / Circuit Breaker / 장애격리
 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함  
-오더 요청이 과도할 경우 서킷 브레이크를 통해 장애 격리를 하려고 한다. 
+쿠폰발행 요청이 과도할 경우 서킷 브레이크를 통해 장애 격리를 하려고 한다. 
 
 Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 ms가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정  
 ![image](https://user-images.githubusercontent.com/85722738/125285997-3c1a9600-e356-11eb-9c05-119e694a38c5.png)
 
 
-결제 서비스의 부하 처리 - 400 ms에서 증감 220 ms 정도 수준으로 설정  
+쿠폰 서비스의 부하 처리 - 400 ms에서 증감 220 ms 정도 수준으로 설정  
 ![image](https://user-images.githubusercontent.com/85722738/125285881-1ab9aa00-e356-11eb-9ed3-740c6e2bcafe.png)
 
 
