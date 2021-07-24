@@ -1191,42 +1191,58 @@ consumer = KafkaConsumer('lecture', bootstrap_servers=[
 
 ## Self-healing (Liveness Probe)
 
-주문관리(Ordermanagement) 서비스의 배포 yaml 파일에 Pod 내 /tmp/healthy 파일을 5초마다 체크하도록 livenessProbe 옵션을 추가하였다
+쿠폰(coupon) 서비스의 배포 yaml 파일에 Pod 내 /tmp/healthy 파일을 5초마다 체크하도록 livenessProbe 옵션을 추가하였다
 
 ```
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: ordermanagement
+  name: coupon
+  namespace: bookdelivery
   labels:
-    app: ordermanagement
+    app: coupon
 spec:
-  containers:
-  - name: ordermanagement
-    image: 879772956301.dkr.ecr.ap-northeast-1.amazonaws.com/user03-ordermgmt:latest
-    livenessProbe:
-      exec:
-        command:
-        - cat 
-        - /tmp/healthy
-      initialDelaySeconds: 15
-      periodSeconds: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coupon
+  template:
+    metadata:
+      labels:
+        app: coupon
+    spec:
+      containers:
+      - name: coupon
+        image: 405574919273.dkr.ecr.us-east-2.amazonaws.com/csa-coupon:latest
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          exec:
+            command:
+            - cat 
+            - /tmp/healthy
+          initialDelaySeconds: 15
+          periodSeconds: 5
 ```
-yaml 파일을 실행하여 주문관리 pod 가 생성되었다
+yaml 파일을 실행하여 쿠폰 pod 가 생성되었다
 ```
-]root@labs--679458944:/home/project# kubectl create -f test_liveness.yaml
-pod/ordermanagement created
+tjddk0114@SKTP038564PN003:~$ kubectl create -f test_liveness.yaml
+deployment.apps/coupon created
 ```
-![live0](https://user-images.githubusercontent.com/85722733/125304329-77be5b80-e368-11eb-8eeb-a2083a26552b.png)
 
 Pod 구동 시 Running 상태이나 Pod 내 체크 대상인 /tmp/healthy 파일이 없기 때문에 livenessProbe 옵션의 "Self-healing" 특징 대로 계속 Retry하여 Restart 된 것이 확인된다
 
-kubectl describe 명령어로 주문관리 Pod 상태 확인 시 livenessProbe 관련 실패 로그
+![liveness-restart](https://user-images.githubusercontent.com/85722733/126854835-41c8b358-022a-4438-b87e-51e94053988e.png)
 
-![live2](https://user-images.githubusercontent.com/85722733/125304502-9d4b6500-e368-11eb-80e3-4bce6f898fc7.png)
+kubectl describe 명령어로 쿠폰 Pod 상태 확인 시 livenessProbe 관련 실패 로그
 
-주문관리 Pod 내부로 진입하여 touch 명령어를 통해 /tmp/healthy 파일 생성 시 Restart가 3번째에서 중단되고 Pod가 정상 동작함을 확인하였다 (2회 Fail 후 파일 생성되어 3번째에 성공)
+![liveness-로그](https://user-images.githubusercontent.com/85722733/126854895-bf6dac1b-c34f-4141-8daf-30ae790ea941.png)
 
-![live1](https://user-images.githubusercontent.com/85722733/125304569-ac321780-e368-11eb-8fc4-92ab83995d2a.png)
+쿠폰 Pod 내부로 진입하여 touch 명령어를 통해 /tmp/healthy 파일 생성 시 Restart가 2번째에서 중단되고 Pod가 정상 동작함을 확인하였다 (1회 Fail 후 파일 생성되어 2번째에 성공)
 
-![live3](https://user-images.githubusercontent.com/85722733/125304613-b3f1bc00-e368-11eb-9a8c-01a897ab7ccf.png)
+```
+tjddk0114@SKTP038564PN003:~$ kubectl exec -it pod/coupon-5d5896d74-d829p -n bookdelivery -- /bin/sh
+/ # touch /tmp/healthy
+```
+
+![liveness-결과](https://user-images.githubusercontent.com/85722733/126854781-e9fd2a13-e0ea-49bc-bfe1-98d97aec3ab6.png)
