@@ -1191,7 +1191,11 @@ spec:
               key: language
 ```
 
-POD 생성 후 아래 명령어를 통해 POD로 진입하여 환경변수 및 echo로 LANGUAGE 값을 확인한다
+쿠폰 POD 생성 확인
+
+![컨피그맵-pod생성](https://user-images.githubusercontent.com/85722733/126857661-cc1c0479-b87e-4be9-9e67-4ffd0f604e53.png)
+
+아래 명령어를 통해 해당 쿠폰 POD로 진입하여 환경변수 및 echo로 LANGUAGE 값을 확인한다
 
 ```
 tjddk0114@SKTP038564PN003:~$ kubectl exec -it pod/coupon-6cf87cc897-pq8dm -n bookdelivery -- /bin/sh
@@ -1199,7 +1203,7 @@ tjddk0114@SKTP038564PN003:~$ kubectl exec -it pod/coupon-6cf87cc897-pq8dm -n boo
 
 ![configmap 결과](https://user-images.githubusercontent.com/85722733/126857457-6ff565b1-1ef4-4246-9283-763bb2068c79.png)
 
-LANGUAGE configmap value가 정상 반영됨을 확인하였다
+configmap value가 정상 반영됨을 확인하였다
 
 
 ## Self-healing (Liveness Probe)
