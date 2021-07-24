@@ -1041,6 +1041,12 @@ buildspec.yml 파일 내용
 
 ![8](https://user-images.githubusercontent.com/60598148/125283634-8fd7b000-e353-11eb-8200-768c23ad2f77.jpg)
 
+**yaml을 이용한 수동 배포**
+
+![CICD수동배포](https://user-images.githubusercontent.com/85722733/126856019-b37b54d5-24e5-442a-9444-31c296211bda.png)
+
+![CICD배포결과](https://user-images.githubusercontent.com/85722733/126856023-f20285b0-e056-42ab-a188-df819befe6d3.png)
+
 
 ## 동기식 호출 / Circuit Breaker / 장애격리
 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함  
