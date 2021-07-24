@@ -1088,57 +1088,63 @@ siege를 통한 부하가 중단이 되고 시간이 흐른 후 CPU가 감소하
 
 ## Zero-downtime deploy (Readiness Probe)
 (무정지 배포)
-서비스의 무정지 배포를 위하여 주문관리(Ordermanagement) 서비스의 배포 yaml 파일에 readinessProbe 옵션을 추가하였다.
+서비스의 무정지 배포를 위하여 배송(delivery) 서비스의 배포 yaml 파일에 readinessProbe 옵션을 추가하였다.
 ```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ordermanagement
+  name: delivery
+  namespace: bookdelivery
   labels:
-    app: ordermanagement
+    app: delivery
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: ordermanagement
+      app: delivery
   template:
     metadata:
       labels:
-        app: ordermanagement
+        app: delivery
     spec:
       containers:
-      - name: ordermanagement
-        image: 879772956301.dkr.ecr.ap-northeast-1.amazonaws.com/user03-ordermgmt:latest
+      - name: delivery
+        image: 405574919273.dkr.ecr.us-east-2.amazonaws.com/csa-delivery:latest
         ports:
         - containerPort: 8080
         readinessProbe:
           httpGet:
-            path: '/ordermgmts'
+            path: '/deliveries'
             port: 8080
           initialDelaySeconds: 10
           timeoutSeconds: 2
           periodSeconds: 5
-          failureThreshold: 3    
-```
+          failureThreshold: 2  
+EOF
 
 ```
-]root@labs--679458944:/home/project# kubectl apply -f deployment.yaml
-deployment.apps/ordermanagement created
-
-]root@labs--679458944:/home/project# kubectl expose deployment/ordermanagement
-service/ordermanagement exposed
+배포 수행
 ```
-![readiness](https://user-images.githubusercontent.com/85722733/125400678-273d1180-e3ed-11eb-854d-a7617b8aaa2b.png)
+tjddk0114@SKTP038564PN003:~$ kubectl apply -f deployment.yaml
+deployment.apps/delivery created
 
-siege 를 통해 100명의 가상의 유저가 30초동안 주문관리 서비스를 지속적으로 호출하게 함과 동시에
+tjddk0114@SKTP038564PN003:~$ kubectl expose deploy delivery -n bookdelivery --type=ClusterIP --port=8080
+service/delivery exposed
 ```
-siege -c100 -t30S -v --content-type "application/json" 'http://ab7cbdfab34934e4daefe25f88a22d77-556791783.ap-northeast-1.elb.amazonaws.com:8080/ordermgmts POST {"orderId": "1", "itemName": "ITbook", "qty": "3", "customerName": "HeidiCho", "deliveryAddress": "kyungkido sungnamsi", "deliveryPhoneNumber": "01012341234", "orderStatus": "orderTaken"}'
+![레디니스-1-1](https://user-images.githubusercontent.com/85722733/126855947-940d0196-c6fd-4597-97e0-7c79c9d1dc82.png)
+
+siege 를 통해 100명의 가상의 유저가 60초동안 배송 서비스를 지속적으로 호출하게 함과 동시에
+```
+siege -c100 -t60S -v --content-type "application/json" 'http://10.100.180.244:8080/deliveries'
 ```
 kubectl set image 명령어를 통해 배포를 수행하였다.
-![readiness2](https://user-images.githubusercontent.com/85722733/125286095-5a809180-e356-11eb-9bfb-a13f663478cf.png)
+
+![레디니스-2](https://user-images.githubusercontent.com/85722733/126855891-0703af7f-78f7-4a91-8ff5-a56172263710.png)
 
 siege 테스트 결과 연결시도 대비 성공률이 100% 로서 readinessProbe 옵션을 통해 무정지 배포를 확인하였다.
-![readiness3](https://user-images.githubusercontent.com/85722733/125286133-666c5380-e356-11eb-9d99-521f156426ce.png)
+
+![레디니스-3](https://user-images.githubusercontent.com/85722733/126855899-68ceba41-7b06-4ce4-b795-3ec2765199ad.png)
+
 
 ## ConfigMap
 운영환경에서 컨피그맵을 통해 pod 생성 시 정해진 kafka url 과 log 파일 설정(운영과 개발 분리)
