@@ -1081,6 +1081,10 @@ root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://10.
 
 ![hpa_시즈후기](https://user-images.githubusercontent.com/85722733/126853292-e58003bb-1622-442e-9e48-d20f2b6da283.png)
 
+siege를 통한 부하가 중단이 되고 시간이 흐른 후 CPU가 감소하여 쿠폰서비스 pod가 다시 1개로 줄어든 것을 확인하였다
+
+![hpa부하중단후기](https://user-images.githubusercontent.com/85722733/126853401-46941b01-443a-416c-bf96-b0e5856fe30d.png)
+
 
 ## Zero-downtime deploy (Readiness Probe)
 (무정지 배포)
