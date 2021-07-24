@@ -1153,52 +1153,53 @@ siege 테스트 결과 연결시도 대비 성공률이 100% 로서 readinessPro
 
 
 ## ConfigMap
-운영환경에서 컨피그맵을 통해 pod 생성 시 정해진 kafka url 과 log 파일 설정(운영과 개발 분리)
-
-bookdelivery-config.yml
-
-![14](https://user-images.githubusercontent.com/60598148/125390104-3e740300-e3dd-11eb-9218-89f36a3416d2.jpg)
+ConfigMap은 컨테이너 이미지로부터 설정 정보를 분리할 수 있도록 Kubernetes에서 제공해주는 설정이다. 환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다. bookdelivery 시스템에서는 LANGUAGE 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 LANGUAGE라는 변수로 language의 값을 저장했다
 
 컨피그맵 생성 및 확인
+![컨피그맵생성](https://user-images.githubusercontent.com/85722733/126857534-3ee897a7-d034-43a1-995d-d30c1a63185f.png)
 
-![15](https://user-images.githubusercontent.com/60598148/125390157-55b2f080-e3dd-11eb-8f69-1d426c0ed830.jpg)
+쿠폰서비스 배포 yaml에 아래와 같이 LANGUAGE라는 환경 변수에 위 configmap에서 정의한 language의 값을 설정한다
 
-deployment yaml 파일
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon
+  namespace: bookdelivery
+  labels:
+    app: coupon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coupon
+  template:
+    metadata:
+      labels:
+        app: coupon
+    spec:
+      containers:
+      - name: coupon
+        image: 405574919273.dkr.ecr.us-east-2.amazonaws.com/csa-coupon:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LANGUAGE
+          valueFrom:
+            configMapKeyRef:
+              name: bookdelivery-config
+              key: language
+```
 
-       - name: consumer
-          image: 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/lecture-consumer:latest 
-          env:
-          - name: KAFKA_URL
-            valueFrom:
-              configMapKeyRef:
-                name: kafka-config
-                key: KAFKA_URL
-          - name: LOG_FILE
-            valueFrom:
-              configMapKeyRef:
-                name: kafka-config
-                key: LOG_FILE
+POD 생성 후 아래 명령어를 통해 POD로 진입하여 환경변수 및 echo로 LANGUAGE 값을 확인한다
 
-POD  생성 후 아래 명령어를 통해 pod 내부 환경 조회
-kubectl exec -it bookdelivery-nstest-deployment-6f976bf7df-kl5mz -- /bin/sh
+```
+tjddk0114@SKTP038564PN003:~$ kubectl exec -it pod/coupon-6cf87cc897-pq8dm -n bookdelivery -- /bin/sh
+```
 
-![16](https://user-images.githubusercontent.com/60598148/125390906-8d6e6800-e3de-11eb-81fa-7c04f21415c5.jpg)
+![configmap 결과](https://user-images.githubusercontent.com/85722733/126857457-6ff565b1-1ef4-4246-9283-763bb2068c79.png)
 
-configmap value 정상 반영 확인됨
-
-프로그램(python) 파일 반영을 통해 kafka 로그 확인
-
-from kafka import KafkaConsumer
-from logging.config import dictConfig
-import logging
-import os
-
-kafka_url = os.getenv('KAFKA_URL')
-log_file = os.getenv('LOG_FILE')
-
-consumer = KafkaConsumer('lecture', bootstrap_servers=[
-                         kafka_url], auto_offset_reset='earliest', enable_auto_commit=True, group_id='alert')
-
+LANGUAGE configmap value가 정상 반영됨을 확인하였다
 
 
 ## Self-healing (Liveness Probe)
