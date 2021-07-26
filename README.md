@@ -1109,7 +1109,7 @@ ConfigMap은 컨테이너 이미지로부터 설정 정보를 분리할 수 있�
 
 환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다 
 
-bookdelivery 시스템에서는 NAMESPACENAME 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 NAMESPACENAME라는 환경변수로 nsname의 값을 저장했다
+bookdelivery 시스템에서는 NAMESPACENAME 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 nsname의 값을 'bookdelivery'로 저장했다
 
 컨피그맵 생성 및 확인
 
@@ -1169,7 +1169,7 @@ service/coupon created
 
 ![컨피그맵결과2](https://user-images.githubusercontent.com/85722733/126934884-1a432808-c1a4-4689-9558-f4fbfb80638e.png)
 
-configmap을 통하여 해당 pod의 NAMESPACENAME 환경변수값으로 bookdelivery가 정상 주입됨을 확인하였다
+configmap을 통하여 nsname 값으로 저장한 'bookdelivery'가 해당 pod의 NAMESPACENAME 환경변수값으로 정상 주입됨을 확인하였다
 
 
 ## Self-healing (Liveness Probe)
