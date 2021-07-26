@@ -1008,44 +1008,54 @@ http localhost:8088/ordermgmts "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cC
 
 # 운영
 ## Deploy/Pipeline
-(CI/CD 설정)
-**BuildSpec.yml 사용**
-각 MSA 구현물은 git의 source repository 에 구성되었고, AWS의 CodeBuild를 활용하여 무정지  CI/CD를 설정하였다.
-
-CodeBuild 설정
-- 빌드 프로젝드 생성(각 MSA별 별도 설정)
-
-![1](https://user-images.githubusercontent.com/60598148/125281723-88afa280-e351-11eb-8956-dea1b984e804.jpg)
-
-- 기본 repository 
-
-![2](https://user-images.githubusercontent.com/60598148/125281985-d6c4a600-e351-11eb-9a6c-1009c33aa28a.jpg)
-
-- 빌드 환경 설정
-
-환경변수(KUBE_URL, KUBE_TOKEN, repository 등 설정)
-
-![3](https://user-images.githubusercontent.com/60598148/125282230-18ede780-e352-11eb-9b96-43a3eb6b0a05.jpg)
-
-- 빌드 스펙
-
-![4](https://user-images.githubusercontent.com/60598148/125282499-6c603580-e352-11eb-8948-d539048971b6.jpg)
-
-buildspec.yml 파일 내용
-![5](https://user-images.githubusercontent.com/60598148/125282795-bba66600-e352-11eb-9c70-b790bb6b567c.jpg)
-
-- 빌드 결과
-
-![6](https://user-images.githubusercontent.com/60598148/125283156-19d34900-e353-11eb-94d2-e7b197cf0dfd.jpg)
-![7](https://user-images.githubusercontent.com/60598148/125283401-5c952100-e353-11eb-9c64-943ee4766263.jpg)
-
-![8](https://user-images.githubusercontent.com/60598148/125283634-8fd7b000-e353-11eb-8200-768c23ad2f77.jpg)
 
 **yaml을 이용한 수동 배포**
 
-![CICD수동배포](https://user-images.githubusercontent.com/85722733/126856019-b37b54d5-24e5-442a-9444-31c296211bda.png)
+Deployment.yaml 파일을 이용한 배포
 
-![CICD배포결과](https://user-images.githubusercontent.com/85722733/126856023-f20285b0-e056-42ab-a188-df819befe6d3.png)
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon
+  namespace: bookdelivery
+  labels:
+    app: coupon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coupon
+  template:
+    metadata:
+      labels:
+        app: coupon
+    spec:
+      containers:
+      - name: coupon
+        image: 879772956301.dkr.ecr.ca-central-1.amazonaws.com/user23-coupon:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coupon
+  namespace: bookdelivery       
+  labels:
+    app: coupon
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: coupon
+```
+
+![yaml파일배포](https://user-images.githubusercontent.com/85722733/126923436-781c8e3a-e936-4f34-a04f-6e6d53ea1d49.png)
+
+![yaml파일배포결과](https://user-images.githubusercontent.com/85722733/126923460-a85f9bf2-d858-4b2f-b722-edf487e60a1d.png)
 
 
 ## 동기식 호출 / Circuit Breaker / 장애격리
