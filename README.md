@@ -882,11 +882,17 @@ delivery 서비스의 application.yml 파일에 dababase 속성도 변경해 주
 
 ![폴리글랏-변경설정1](https://user-images.githubusercontent.com/85722733/126960720-b1ba9907-5a97-484a-ab92-a835f468af37.png)
 
+![폴리글랏-변경설정11](https://user-images.githubusercontent.com/85722733/126979443-03090b26-499e-4bc8-a062-311fa92b7425.png)
+
 이후 로컬에서 delivery 서비스를 mvn spring-boot:run 으로 구동한 결과 
 
 PgAdmin을 통해 배송서비스(delivery) 관련 테이블(delivery_table)이 postgres에 생성된 모습을 확인하였다
 
 ![폴리글랏-결과](https://user-images.githubusercontent.com/85722733/126959910-ed04b5d3-019e-4c90-b27f-ae09d48a1d71.png)
+
+운영에도 배포한 결과 delivery 서비스가 변경된 postgreSQL DB로 정상적으로 동작함을 확인하였다
+
+![폴리글랏-운영](https://user-images.githubusercontent.com/85722733/126979775-257f277e-0d7d-4705-8998-7874e9a11874.png)
 
 
 ## API 게이트웨이
