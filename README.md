@@ -124,7 +124,7 @@ Lv.2 Intensive Coursework
 
 ## Event Storming 결과
 * MSAEz 로 모델링한 이벤트스토밍 결과:  http://www.msaez.io/#/storming/null/348fa7c90636e01a5525272b163ef307
-* 3조 조성아 개인 모델링 결과:
+* 3조 조성아 개인 모델링 결과: http://www.msaez.io/#/storming/2WHhr58frxP61Pm7rSPRUu6bGAY2/a3d0c571347ffe13b35a5adaf281728d
 
 ### 이벤트 도출
 <img src="https://user-images.githubusercontent.com/85722733/126592134-afa1e97d-fced-4931-8e70-8014e55978c2.png"  width="80%" height="80%">
