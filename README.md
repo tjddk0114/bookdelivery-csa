@@ -870,6 +870,7 @@ aws RDS서비스를 이용하여 bookdelivery 데이터베이스를 생성하였
 
 ![image](https://user-images.githubusercontent.com/78421066/125375108-6191b900-e3c3-11eb-9951-7d4d9f1c5d10.png)
 
+
 ## API 게이트웨이
 
 - API GW를 통하여 마이크로 서비스들의 진입점을 통일할 수 있는가?
@@ -984,9 +985,9 @@ spec:
 
 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현 
 
-점주의 주문관리 접수 시 쿠폰발행 요청(ordermanagement → coupon)이 과도할 경우 서킷 브레이크를 통해 장애 격리를 하려고 한다
+점주의 주문관리 접수 시 쿠폰발행 요청(ordermanagement → coupon)이 과도할 경우 서킷 브레이커를 통한 회로 차단을 통해 장애 격리를 하려고 한다
 
-Hystrix 를 설정: 주문관리 요청처리 쓰레드에서 처리시간이 610 ms가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정  
+Hystrix 를 설정: 주문관리 요청처리 쓰레드에서 처리시간이 610 ms가 넘어서기 시작하여 어느정도 유지되면 회로가 차단되도록 (요청을 빠르게 실패처리) 설정  
 
 ![서킷-0](https://user-images.githubusercontent.com/85722733/126925278-9ee5e353-85a6-4577-bdc0-67e40cf8c7b9.png)
 
