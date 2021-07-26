@@ -1109,13 +1109,15 @@ ConfigMap은 컨테이너 이미지로부터 설정 정보를 분리할 수 있�
 
 환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다 
 
-bookdelivery 시스템에서는 LANGUAGE 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 LANGUAGE라는 변수로 language의 값을 저장했다
+bookdelivery 시스템에서는 NAMESPACENAME 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 NAMESPACENAME라는 환경변수로 nsname의 값을 저장했다
 
 컨피그맵 생성 및 확인
-![컨피그맵생성](https://user-images.githubusercontent.com/85722733/126857534-3ee897a7-d034-43a1-995d-d30c1a63185f.png)
 
-쿠폰서비스 배포 yaml에 아래와 같이 LANGUAGE라는 환경 변수에 위 configmap에서 정의한 language의 값을 설정한다
+![2_컨피그맵생성](https://user-images.githubusercontent.com/85722733/126934568-60237499-9264-447f-84bd-4fc73a1be89a.png)
 
+쿠폰서비스 배포 yaml에 아래와 같이 NAMESPACENAME라는 환경 변수에 위 configmap에서 정의한 nsname의 값을 설정한다
+
+Deployment_cm.yaml
 ```
 apiVersion: apps/v1
 kind: Deployment
@@ -1136,30 +1138,38 @@ spec:
     spec:
       containers:
       - name: coupon
-        image: 405574919273.dkr.ecr.us-east-2.amazonaws.com/csa-coupon:latest
+        image: 879772956301.dkr.ecr.ca-central-1.amazonaws.com/user23-coupon:latest
         ports:
         - containerPort: 8080
         env:
-        - name: LANGUAGE
-          valueFrom:
-            configMapKeyRef:
-              name: bookdelivery-config
-              key: language
+          - name: NAMESPACENAME
+            valueFrom:
+              configMapKeyRef:
+                name: bookdelivery-config
+                key: nsname
+...생략
 ```
 
-쿠폰 POD 생성 확인
-
-![컨피그맵-pod생성](https://user-images.githubusercontent.com/85722733/126857661-cc1c0479-b87e-4be9-9e67-4ffd0f604e53.png)
-
-아래 명령어를 통해 해당 쿠폰 POD로 진입하여 환경변수 및 echo로 LANGUAGE 값을 확인한다
-
+배포 후 쿠폰 pod 생성 확인
 ```
-tjddk0114@SKTP038564PN003:~$ kubectl exec -it pod/coupon-6cf87cc897-pq8dm -n bookdelivery -- /bin/sh
+]root@labs-565305537:/home/project# kubectl apply -f Deployment_cm.yaml
+deployment.apps/coupon created
+service/coupon created
 ```
 
-![configmap 결과](https://user-images.githubusercontent.com/85722733/126857457-6ff565b1-1ef4-4246-9283-763bb2068c79.png)
+![2_컨피그맵_pod생성](https://user-images.githubusercontent.com/85722733/126934697-d8d1415d-9c2a-4c1c-a8f9-cc32a25d77e5.png)
 
-configmap value가 정상 반영됨을 확인하였다
+아래 명령어를 통해 해당 쿠폰 pod로 진입하여 환경변수 및 echo로 NAMESPACENAME 값을 확인한다
+
+```
+]root@labs-565305537:/home/project# kubectl exec -it pod/coupon-5954668d55-gxmnd -n bookdelivery -- /bin/sh
+```
+
+![컨피그맵결과1](https://user-images.githubusercontent.com/85722733/126934819-d1e5978d-4664-4bc9-9b2c-c57ae4d4ad7e.png)
+
+![컨피그맵결과2](https://user-images.githubusercontent.com/85722733/126934884-1a432808-c1a4-4689-9558-f4fbfb80638e.png)
+
+configmap을 통하여 해당 pod의 NAMESPACENAME 환경변수값으로 bookdelivery가 정상 주입됨을 확인하였다
 
 
 ## Self-healing (Liveness Probe)
