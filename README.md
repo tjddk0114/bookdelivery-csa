@@ -1009,9 +1009,9 @@ http localhost:8088/ordermgmts "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cC
 # 운영
 ## Deploy/Pipeline
 
-**yaml을 이용한 수동 배포**
+**yaml을 이용한 배포**
 
-Deployment.yaml 파일을 이용한 배포
+배포에 사용한 Deployment.yaml
 
 ```
 apiVersion: apps/v1
