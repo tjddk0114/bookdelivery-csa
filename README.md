@@ -850,25 +850,43 @@ mvn spring-boot:run
 
 ## 폴리글랏 퍼시스턴스
 
-- 각 마이크로 서비스들이 각자의 저장소 구조를 자율적으로 채택하고 각자의 저장소 유형 (RDB, NoSQL, File System 등)을 선택하여 구현하였는가?
+배송 서비스(delivery)는 실시간 배송위치 추적 등 추후 지도(GIS) 기반 서비스의 확장까지 고려하여, 공간(Spatial)부분에 상당한 강점이 있는 데이터베이스인 postgreSQL로 선정하여
 
-Payment 서비스의 경우 타 서비스들의 비해 안정성이 중요하다고 생각하였다. H2 DB의 경우 대규모 주문이 발생시 안정성과 성능이 아직은 부족하다고 생각했다. 그래서 안정성과 성능이 높은 DB와 경제성(라이센스 비용)에 강점이 있는 Maria DB를 선택하게 되었다.
+자동생성된 DB설정인 H2에서 postgreSQL로 변경하였다
 
-Payment서비스 pom.xml 의존성을 변경해 주었다.
+먼저, AWS RDS를 통하여 postgreSQL을 프리티어로 생성하였다
 
-![image](https://user-images.githubusercontent.com/78421066/125373411-12965480-e3c0-11eb-83a1-ca712db9ae3e.png)
+AWS > RDS > 데이터베이스 생성
 
-application.yml 파일에 dababase 속성도 넣어주었다.
+![폴리글랏-RDS0](https://user-images.githubusercontent.com/85722733/126958629-d2b82388-b2a2-4779-bada-e3ef6096fc7f.png)
 
-![image](https://user-images.githubusercontent.com/78421066/125383139-e8e62900-e3d1-11eb-868d-5637127f8c45.png)
+생성된 모습
 
-aws RDS서비스를 이용하여 bookdelivery 데이터베이스를 생성하였다.
+![폴리글랏-RDS1](https://user-images.githubusercontent.com/85722733/126958785-e76d3145-dcb2-4485-ba58-fa597d51970f.png)
 
-![image](https://user-images.githubusercontent.com/78421066/125374606-52f6d200-e3c2-11eb-9f95-f86a936c2d33.png)
+접속 허용을 위해 보안그룹을 추가하고, 인바운드 규칙에 모든 TCP를 허용하였다
 
-로컬PC DBeaver를 이용하여 데이터베이스 및 테이블 생성을 확인하였다.
+![폴리글랏-RDS2](https://user-images.githubusercontent.com/85722733/126958811-3431de6f-d7ee-4b86-b24e-4b3902e4d0eb.png)
 
-![image](https://user-images.githubusercontent.com/78421066/125375108-6191b900-e3c3-11eb-9951-7d4d9f1c5d10.png)
+로컬PC에서 PgAdmin을 통해 해당 DB에 접속가능함을 확인하고
+
+![폴리글랏_PGADMIN_1](https://user-images.githubusercontent.com/85722733/126959117-616675b9-40f2-4fdc-8863-299cfeaf3399.png)
+
+소스에서는 delivery 서비스의 pom.xml 의존성을 변경해 주고
+
+기존 h2 → postgreSQL 변경 
+
+![폴리글랏-변경설정2](https://user-images.githubusercontent.com/85722733/126959584-7de9cf61-8e9f-4c9e-aefe-d6ec4627edbc.png)
+
+delivery 서비스의 application.yml 파일에 dababase 속성도 변경해 주었다
+
+![폴리글랏-변경설정1](https://user-images.githubusercontent.com/85722733/126960720-b1ba9907-5a97-484a-ab92-a835f468af37.png)
+
+이후 로컬에서 delivery 서비스를 mvn spring-boot:run 으로 구동한 결과 
+
+PgAdmin을 통해 배송서비스(delivery) 관련 테이블(delivery_table)이 postgres에 생성된 모습을 확인하였다
+
+![폴리글랏-결과](https://user-images.githubusercontent.com/85722733/126959910-ed04b5d3-019e-4c90-b27f-ae09d48a1d71.png)
 
 
 ## API 게이트웨이
