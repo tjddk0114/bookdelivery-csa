@@ -928,84 +928,6 @@ Gateway 포트인 8088을 통해서 발행된 쿠폰이 정상 조회되는 것�
 ![주문접수생성-쿠폰생성](https://user-images.githubusercontent.com/85722733/126625049-22fbc909-2bc7-421c-95a8-7e0bccc8a229.png)
 
 
-- 게이트웨이와 인증서버(OAuth), JWT 토큰 인증을 통하여 마이크로서비스들을 보호할 수 있는가?
-
-gateway(8088 포트)를 통한 orders, payments, ordermgmts, deliveries 경로 접근은 차단하도록 환경 설정을 하였다.
-pathMatchers("/oauth/","/login/").permitAll() : /oauth/, /login/ 경로만 게이트웨이에서 접근이 가능하도록 하였다.
-oauth2ResourceServer() : 인증서버를 이용, jwt() : jwt 방식 인증
-
-```
-   @Bean
-    SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) throws Exception {
-
-        http
-                .cors().and()
-                .csrf().disable()
-                .authorizeExchange()
-                .pathMatchers("/oauth/**","/login/**").permitAll()
-                .anyExchange().authenticated()
-                .and()
-                .oauth2ResourceServer()
-                .jwt()
-                ;
-
-        return http.build();
-    }
-```
-
-인증서버(OAuth)의 경우 해당 아이디(1@uengine.org)와 패스워드(1)로 접근한 사용자만 토큰값을 얻어서 접근 할 수 있도록 구현하였다.
-```
-		User user = new User();
-		user.setUsername("1@uengine.org");
-		user.setPassword(passwordEncoder.encode("1"));
-		user.setNickName("유엔진");
-		user.setAddress("서울시");
-		user.setRole("USER_ADMIN");
-		repository.save(user);
-```
-
-인증서버(OAuth)와 gateway서버(gateway-master)를 실행시킨다.
-```
-cd OAuth
-mvn spring-boot:run
-
-cd gateway-master
-mvn spring-boot:run
-```
-
-gateway(8088포트)를 통해 ordermgmts로 접근을 하면 유효하지 않은 인증(401 Unauthorized) 나오게 된다.
-
-```
-$ http localhost:8088/ordermgmts
-HTTP/1.1 401 Unauthorized
-Cache-Control: no-cache, no-store, max-age=0, must-revalidate
-Expires: 0
-Pragma: no-cache
-Referrer-Policy: no-referrer
-Vary: Origin
-Vary: Access-Control-Request-Method
-Vary: Access-Control-Request-Headers
-WWW-Authenticate: Bearer
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-X-XSS-Protection: 1 ; mode=block
-content-length: 0
-```
-
-인증을 하기 위해서 토큰값을 갖고 온다.
-
-```
-http --form POST localhost:8090/oauth/token "Authorization: Basic dWVuZ2luZS1jbGllbnQ6dWVuZ2luZS1zZWNyZXQ=" grant_type=password username=1@uengine.org password=1
-```
-![image](https://user-images.githubusercontent.com/78421066/125151912-8ba96800-e184-11eb-8523-c816453bcd27.png)
-
-해당 access_token 값을 가지고 다시 localhost:8088/ordermgmts에 접속하면 인증됨을 확인 할 수 있다.
-
-```
-http localhost:8088/ordermgmts "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoi7ISc7Jq47IucIiwidXNlcl9uYW1lIjoiMUB1ZW5naW5lLm9yZyIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSIsInRydXN0Il0sIm5pY2tuYW1lIjoi7Jyg7JeU7KeEIiwiY29tcGFueSI6IlVlbmdpbmUiLCJleHAiOjE2MjU5Nzg0NjQsImF1dGhvcml0aWVzIjpbIlVTRVJfQURNSU4iXSwianRpIjoiZ1l6cEltL29RYytucC9iYVZacGZYazNIU3k0PSIsImNsaWVudF9pZCI6InVlbmdpbmUtY2xpZW50In0.Ic56B-RPB4voEPSnQ_IecmSwbgqg2x7FojMFohKvHzMnKzA_6yb72vFs-ay3T7DSyplD22bdHvE1yEYV8oTzAv47srcjS4YLMnM9BDVLartkltfaj-DkXuiNRDbvesIKp4tTv3gFEQ16deocvY9W5Dv-Hkhqk_Hy4SlR2LKdKD2Q5yHDM4kqsNesjPFnRydJqHLgv0l9LIF76VJI5woMFJ8H6mRGE8DKJOvOF2DwItc8MzqgwILQV4WYzw8yRy_CZjR2hDG1wsqqhi1YlQWfgySRrFsaXAYv08h_rMPzudpncNOXM1i9SZlXcX0-BI03GCO6RmLMmo-NonTkSk5JTg"
-```
-![image](https://user-images.githubusercontent.com/78421066/125152033-30c44080-e185-11eb-902e-b9151c180b8c.png)
-
 # 운영
 ## Deploy/Pipeline
 
@@ -1059,23 +981,31 @@ spec:
 
 
 ## 동기식 호출 / Circuit Breaker / 장애격리
-서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함  
-쿠폰발행 요청이 과도할 경우 서킷 브레이크를 통해 장애 격리를 하려고 한다. 
 
-Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 ms가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정  
-![image](https://user-images.githubusercontent.com/85722738/125285997-3c1a9600-e356-11eb-9c05-119e694a38c5.png)
+서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현 
 
+점주의 주문관리 접수 시 쿠폰발행 요청(ordermanagement → coupon)이 과도할 경우 서킷 브레이크를 통해 장애 격리를 하려고 한다
 
-쿠폰 서비스의 부하 처리 - 400 ms에서 증감 220 ms 정도 수준으로 설정  
-![image](https://user-images.githubusercontent.com/85722738/125285881-1ab9aa00-e356-11eb-9ed3-740c6e2bcafe.png)
+Hystrix 를 설정: 주문관리 요청처리 쓰레드에서 처리시간이 610 ms가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정  
 
+![서킷-0](https://user-images.githubusercontent.com/85722733/126925278-9ee5e353-85a6-4577-bdc0-67e40cf8c7b9.png)
+
+쿠폰 서비스의 @PrePersist를 통한 부하 처리 - 400 ms에서 증감 220 ms 정도 수준으로 설정  
+
+![서킷-1](https://user-images.githubusercontent.com/85722733/126925099-703fa020-8819-4204-8b82-08d7b45930b3.png)
 
 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인: 동시사용자 100명 60초 동안 실시  
-![image](https://user-images.githubusercontent.com/85722738/125383279-25198980-e3d2-11eb-948a-881c61c88a01.png)
+```
+root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://ad14a218402594686882511763e70260-829489272.ca-central-1.elb.amazonaws.com:8080/ordermgmts POST {"orderId": "1", "itemName": "ITbook", "qty": "3", "customerName": "HeidiCho", "customerId": "7777", "deliveryAddress": "kyungkido sungnamsi", "deliveryPhoneNumber": "01012341234", "orderStatus": "orderTaken"}'
+```
 
 요청 상태에 따라 회로 열기/닫기가 반복되는 모습 확인
-![image](https://user-images.githubusercontent.com/85722738/125383229-13d07d00-e3d2-11eb-81f9-425bdec581d5.png)
-![image](https://user-images.githubusercontent.com/85722738/125383434-5b570900-e3d2-11eb-971e-f7ae5da0c6ba.png)
+
+![서킷-2](https://user-images.githubusercontent.com/85722733/126925425-7348b6a5-d896-4a6a-8893-72d0783a88cf.png)
+
+siege 테스트 결과 연결시도 대비 성공률이 약 73% 로서 서킷 브레이커가 정상 동작함을 확인하였다
+
+![서킷-3](https://user-images.githubusercontent.com/85722733/126925404-da44f085-d8f0-4979-a7b3-235f8faa9973.png)
 
 
 ## Autoscale (HPA)
