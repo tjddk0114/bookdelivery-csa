@@ -1035,66 +1035,81 @@ siege를 통한 부하가 중단이 되고 시간이 흐른 후 CPU가 감소하
 
 ## Zero-downtime deploy (Readiness Probe)
 (무정지 배포)
-서비스의 무정지 배포를 위하여 배송(delivery) 서비스의 배포 yaml 파일에 readinessProbe 옵션을 추가하였다.
+
+서비스의 무정지 배포를 위하여 쿠폰(coupon) 서비스의 배포 yaml 파일에 readinessProbe 옵션을 추가하였다
+
+Deployment.yaml
 ```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: delivery
+  name: coupon
   namespace: bookdelivery
   labels:
-    app: delivery
+    app: coupon
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: delivery
+      app: coupon
   template:
     metadata:
       labels:
-        app: delivery
+        app: coupon
     spec:
       containers:
-      - name: delivery
-        image: 405574919273.dkr.ecr.us-east-2.amazonaws.com/csa-delivery:latest
+      - name: coupon
+        image: 879772956301.dkr.ecr.ca-central-1.amazonaws.com/user23-coupon:latest
         ports:
         - containerPort: 8080
         readinessProbe:
           httpGet:
-            path: '/deliveries'
+            path: '/coupons'
             port: 8080
           initialDelaySeconds: 10
           timeoutSeconds: 2
           periodSeconds: 5
           failureThreshold: 2  
-EOF
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coupon
+  namespace: bookdelivery       
+  labels:
+    app: coupon
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: coupon
 
 ```
 배포 수행
-```
-tjddk0114@SKTP038564PN003:~$ kubectl apply -f deployment.yaml
-deployment.apps/delivery created
 
-tjddk0114@SKTP038564PN003:~$ kubectl expose deploy delivery -n bookdelivery --type=ClusterIP --port=8080
-service/delivery exposed
-```
-![레디니스-1-1](https://user-images.githubusercontent.com/85722733/126855947-940d0196-c6fd-4597-97e0-7c79c9d1dc82.png)
+![레디니스-1](https://user-images.githubusercontent.com/85722733/126932315-d0c3a8fb-08b8-488a-9c8b-4ee74895409e.png)
 
 siege 를 통해 100명의 가상의 유저가 60초동안 배송 서비스를 지속적으로 호출하게 함과 동시에
 ```
-siege -c100 -t60S -v --content-type "application/json" 'http://10.100.180.244:8080/deliveries'
+root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://ad14a218402594686882511763e70260-829489272.ca-central-1.elb.amazonaws.com:8080/coupons'
 ```
 kubectl set image 명령어를 통해 배포를 수행하였다.
 
-![레디니스-2](https://user-images.githubusercontent.com/85722733/126855891-0703af7f-78f7-4a91-8ff5-a56172263710.png)
+![레디니스0](https://user-images.githubusercontent.com/85722733/126932382-d4630594-2e2e-448d-8138-d5086b8ca570.png)
 
 siege 테스트 결과 연결시도 대비 성공률이 100% 로서 readinessProbe 옵션을 통해 무정지 배포를 확인하였다.
 
-![레디니스-3](https://user-images.githubusercontent.com/85722733/126855899-68ceba41-7b06-4ce4-b795-3ec2765199ad.png)
+![레디니스-3](https://user-images.githubusercontent.com/85722733/126932402-176d3367-7778-4459-85cb-6f81102774e3.png)
 
 
 ## ConfigMap
-ConfigMap은 컨테이너 이미지로부터 설정 정보를 분리할 수 있도록 Kubernetes에서 제공해주는 설정이다. 환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다. bookdelivery 시스템에서는 LANGUAGE 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 LANGUAGE라는 변수로 language의 값을 저장했다
+ConfigMap은 컨테이너 이미지로부터 설정 정보를 분리할 수 있도록 Kubernetes에서 제공해주는 설정인데,
+
+환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다 
+
+bookdelivery 시스템에서는 LANGUAGE 값을 저장하여 사용하기 위해서 아래와 같이 bookdelivery-config라는 이름의 configmap 에 LANGUAGE라는 변수로 language의 값을 저장했다
 
 컨피그맵 생성 및 확인
 ![컨피그맵생성](https://user-images.githubusercontent.com/85722733/126857534-3ee897a7-d034-43a1-995d-d30c1a63185f.png)
