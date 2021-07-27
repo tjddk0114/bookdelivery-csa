@@ -667,7 +667,7 @@ payment 서비스에서 결제취소 이벤트 발행 시 coupon 서비스에서
 ### CQRS
 - CQRS: Materialized View 를 구현하여, 타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 내 서비스의 화면 구성과 잦은 조회가 가능한가?
 
-고객이 본인에게 발행된 도서할인쿠폰을 마이쿠폰페이지에서 확인할 수 있어야 한다는 요구사항에 따라 주문 서비스 내에 MyCoupon View를 모델링하였다
+고객이 본인에게 발행된 쿠폰을 마이쿠폰페이지에서 확인할 수 있어야 한다는 요구사항에 따라 주문 서비스 내에 MyCoupon View를 모델링하였다
 
 ![마이쿠폰](https://user-images.githubusercontent.com/85722733/126601519-2fb8f8d1-5913-4784-b3d6-2188df629f7a.png)
 
