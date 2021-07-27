@@ -1021,7 +1021,7 @@ Hystrix 를 설정: 주문관리 요청처리 쓰레드에서 처리시간이 61
 
 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인: 동시사용자 100명 60초 동안 실시  
 ```
-root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://ad14a218402594686882511763e70260-829489272.ca-central-1.elb.amazonaws.com:8080/ordermgmts POST {"orderId": "1", "itemName": "ITbook", "qty": "3", "customerName": "HeidiCho", "customerId": "7777", "deliveryAddress": "kyungkido sungnamsi", "deliveryPhoneNumber": "01012341234", "orderStatus": "orderTaken"}'
+root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://10.100.37.173:8080/ordermgmts POST {"orderId": "1", "itemName": "ITbook", "qty": "3", "customerName": "HeidiCho", "customerId": "7777", "deliveryAddress": "kyungkido sungnamsi", "deliveryPhoneNumber": "01012341234", "orderStatus": "orderTaken"}'
 ```
 
 요청 상태에 따라 회로 열기/닫기가 반복되는 모습 확인
@@ -1117,7 +1117,7 @@ spec:
 
 siege 를 통해 100명의 가상의 유저가 60초동안 쿠폰 서비스를 지속적으로 호출하게 함과 동시에
 ```
-root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://ad14a218402594686882511763e70260-829489272.ca-central-1.elb.amazonaws.com:8080/coupons'
+root@siege:/# siege -c100 -t60S -v --content-type "application/json" 'http://10.100.37.173:8080/coupons'
 ```
 kubectl set image 명령어를 통해 배포를 수행하였다.
 
