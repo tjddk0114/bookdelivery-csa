@@ -655,7 +655,7 @@ OrderCanceled 이벤트로 인하여 orderManagement 서비스에서 주문상�
 
 ![주문취소-결제취소](https://user-images.githubusercontent.com/85722733/126622641-74b0fac7-042b-4383-88ed-b1e5f0b24110.png)
 
-payment 서비스에서 결제취소 이벤트 발행 시 coupon 서비스에서 subscribe하여 해당 주문 건에 대해 고객에게 발행된 쿠폰에 대한 쿠폰상태를 invalid로 변경하면서 쿠폰을 무효화하게 된다 
+payment 서비스에서 결제취소 이벤트 발행 시 coupon 서비스에서 subscribe하여 해당 주문 건으로 고객에게 발행된 쿠폰에 대한 상태를 invalid로 변경하면서 쿠폰을 무효화하게 된다 
 
 ![주문취소-쿠폰취소폴리시호출](https://user-images.githubusercontent.com/85722733/126622650-83a0b5d2-1112-49d0-b0bb-bcd114bd0312.png)
 
